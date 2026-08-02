@@ -1363,6 +1363,104 @@ textarea.input {
   display: none;
 }
 
+/* ---------- Mobile bottom navigation ---------- */
+
+.mobile-nav {
+  display: none;
+}
+
+@media (max-width: 960px) {
+  .mobile-nav {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 45;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -6px 24px -12px rgba(15, 18, 34, 0.18);
+  }
+
+  .mobile-nav-btn {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 5px 2px 4px;
+    border: none;
+    background: transparent;
+    color: var(--text-3);
+    font-size: 10.5px;
+    font-weight: 500;
+    border-radius: var(--radius-sm);
+    transition: color var(--transition);
+  }
+
+  .mobile-nav-btn.active {
+    color: var(--primary);
+  }
+
+  .mobile-nav-ico {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+  }
+
+  .mobile-nav-badge {
+    position: absolute;
+    top: -5px;
+    right: -9px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    display: grid;
+    place-items: center;
+    font-size: 9.5px;
+    font-weight: 700;
+    color: #fff;
+    background: var(--primary);
+    border-radius: 999px;
+    border: 2px solid var(--surface);
+  }
+
+  .mobile-nav-badge.alert {
+    background: var(--danger);
+  }
+
+  /* Center quick-add: raised pill on top of the bar. */
+  .mobile-nav-btn.center .mobile-nav-ico {
+    width: 44px;
+    height: 44px;
+    margin-top: -22px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, var(--primary), #7c3aed);
+    color: #fff;
+    box-shadow: 0 10px 22px -6px var(--primary);
+  }
+  .mobile-nav-btn.center.active {
+    color: var(--text-3);
+  }
+  .mobile-nav-btn.center .mobile-nav-label {
+    padding-top: 2px;
+  }
+
+  /* Make room below content for the fixed bar + FAB clearance. */
+  .main {
+    padding-bottom: calc(96px);
+  }
+
+  /* The bottom bar's center "+" covers quick-add, so the FAB is redundant. */
+  .fab {
+    display: none;
+  }
+}
+
 @media (max-width: 960px) {
   .sidebar {
     transform: translateX(-100%);

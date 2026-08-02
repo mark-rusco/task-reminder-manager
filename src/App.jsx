@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Menu, Bell, BellOff, Loader2, LayoutDashboard } from 'lucide-react';
+import { Bell, BellOff, Loader2, LayoutDashboard } from 'lucide-react';
 import { useTheme } from './hooks/useTheme';
 import { useNow } from './hooks/useNow';
 import { useTasks } from './hooks/useTasks';
@@ -13,6 +13,7 @@ import FocusTimer from './components/FocusTimer.jsx';
 import AuthPage from './components/AuthPage.jsx';
 import { isDueToday, isOverdue, isDueTomorrow, isThisWeek, todayStr } from './utils/dates';
 import Sidebar from './components/Sidebar.jsx';
+import MobileNav from './components/MobileNav.jsx';
 import Header, { viewMeta } from './components/Header.jsx';
 import StatsBar from './components/StatsBar.jsx';
 import TaskList from './components/TaskList.jsx';
@@ -296,9 +297,6 @@ function AppShell() {
 
       <main className="main">
         <div className="mobile-topbar">
-          <button className="icon-btn" onClick={() => setMenuOpen(true)} aria-label="Open menu">
-            <Menu size={20} />
-          </button>
           <strong className="mobile-brand">Focusly</strong>
           <button
             className="icon-btn"
@@ -415,6 +413,14 @@ function AppShell() {
       )}
 
       <FocusTimer onComplete={onTimerComplete} />
+
+      <MobileNav
+          activeView={view.type}
+          counts={counts}
+          onNavigate={navigate}
+          onNewTask={() => openNewTask(defaultDateForView)}
+          onOpenMore={() => setMenuOpen(true)}
+        />
 
       <TaskModal
         open={modal.open}
