@@ -1,17 +1,17 @@
-import { useCallback, useState } from 'react';
-import { loadState, saveState } from '../utils/storage';
-import { DEFAULT_TRACKER_CONFIG, normalizeConfig, TRACKER_KEY } from '../utils/trackers';
+import { useCallback } from 'react';
+import { useSettings } from '../context/SettingsContext';
+import { DEFAULT_TRACKER_CONFIG, normalizeConfig } from '../utils/trackers';
 
 export function useTrackerConfig() {
-  const [config, setConfig] = useState(() => normalizeConfig(loadState(TRACKER_KEY, null)));
+  const { settings, setSetting } = useSettings();
+  const config = normalizeConfig(settings.tracker);
 
-  const updateConfig = useCallback((patch) => {
-    setConfig((prev) => {
-      const next = normalizeConfig({ ...prev, ...patch });
-      saveState(TRACKER_KEY, next);
-      return next;
-    });
-  }, []);
+  const updateConfig = useCallback(
+    (patch) => {
+      setSetting('tracker', (prev) => normalizeConfig({ ...(prev || {}), ...patch }));
+    },
+    [setSetting],
+  );
 
   return { config, updateConfig };
 }

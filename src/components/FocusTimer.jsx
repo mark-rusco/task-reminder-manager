@@ -11,21 +11,26 @@ import {
   X,
 } from 'lucide-react';
 import { useFocusTimer, formatMs } from '../hooks/useFocusTimer';
+import { useSettings } from '../context/SettingsContext';
 import { setReminderSoundEnabled } from '../utils/audio';
-import { loadState, saveState } from '../utils/storage';
+import { loadState } from '../utils/storage';
 
 export default function FocusTimer({ onComplete }) {
   const timer = useFocusTimer(onComplete);
+  const { settings, setSetting } = useSettings();
   const [open, setOpen] = useState(false);
   const [customOpen, setCustomOpen] = useState(false);
   const [minutes, setMinutes] = useState('');
   const [label, setLabel] = useState('');
-  const [reminderSound, setReminderSound] = useState(() => loadState('focus:reminderSound', true));
+  const [reminderSound, setReminderSound] = useState(() => {
+    const synced = settings.focus?.reminderSound;
+    return typeof synced === 'boolean' ? synced : loadState('focus:reminderSound', true);
+  });
 
   useEffect(() => {
-    saveState('focus:reminderSound', reminderSound);
     setReminderSoundEnabled(reminderSound);
-  }, [reminderSound]);
+    setSetting('focus', (prev) => ({ ...(prev || {}), reminderSound }));
+  }, [reminderSound, setSetting]);
 
   useEffect(() => {
     if (timer.alarming) setOpen(true);

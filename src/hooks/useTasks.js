@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { useSettings } from '../context/SettingsContext';
 import { loadState, saveState } from '../utils/storage';
 import {
   DEFAULT_LABELS,
@@ -140,6 +141,7 @@ const fromRow = (r) => ({
 
 export function useTasks() {
   const { session } = useAuth();
+  const { settings, setSetting } = useSettings();
   const userId = session?.user?.id || null;
   const backend = !!supabase && !!userId;
 
@@ -155,7 +157,10 @@ export function useTasks() {
     return existing || [];
   });
   const [labels, setLabels] = useState(() => loadState(LABELS_KEY, DEFAULT_LABELS) || []);
-  const [snoozed, setSnoozed] = useState(() => loadState(SNOOZE_KEY, []) || []);
+  const [snoozed, setSnoozed] = useState(() => {
+    if (Array.isArray(settings.snoozed)) return settings.snoozed;
+    return loadState(SNOOZE_KEY, []) || [];
+  });
   const [toasts, setToasts] = useState([]);
   const [syncing, setSyncing] = useState(false);
   const toastSeq = useRef(0);
@@ -255,6 +260,7 @@ export function useTasks() {
   useEffect(() => saveState(TASKS_KEY, tasks), [tasks]);
   useEffect(() => saveState(LABELS_KEY, labels), [labels]);
   useEffect(() => saveState(SNOOZE_KEY, snoozed), [snoozed]);
+  useEffect(() => setSetting('snoozed', snoozed), [snoozed, setSetting]);
 
   const persistTask = useCallback(
     (task) => {

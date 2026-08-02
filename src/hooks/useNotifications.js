@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
-import { loadState, saveState } from '../utils/storage';
-import { NOTIF_KEY } from '../utils/constants';
+import { useCallback, useEffect } from 'react';
+import { useSettings } from '../context/SettingsContext';
 import { dueMoment } from '../utils/dates';
 import dayjs from 'dayjs';
 
@@ -11,9 +10,18 @@ const ICON_URL =
   );
 
 export function useNotifications({ tasks, now, onFire }) {
-  const [prefs, setPrefs] = useState(() => loadState(NOTIF_KEY, { enabled: false, granted: false }));
+  const { settings, setSetting } = useSettings();
+  const prefs = settings.notifications || { enabled: false, granted: false };
 
-  useEffect(() => saveState(NOTIF_KEY, prefs), [prefs]);
+  const setPrefs = useCallback(
+    (updater) => {
+      setSetting('notifications', (prev) => {
+        const base = prev || { enabled: false, granted: false };
+        return typeof updater === 'function' ? updater(base) : updater;
+      });
+    },
+    [setSetting],
+  );
 
   const requestPermission = useCallback(async () => {
     if (typeof Notification === 'undefined') {

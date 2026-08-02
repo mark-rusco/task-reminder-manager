@@ -50,6 +50,7 @@ export function uid() {
   return `id-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
+export const SETTINGS_KEY = 'user-settings';
 export const THEME_KEY = 'theme';
 export const NOTIF_KEY = 'notifications';
 export const LABELS_KEY = 'labels';

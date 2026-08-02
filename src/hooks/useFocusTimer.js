@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { loadState, saveState } from '../utils/storage';
+import { useSettings } from '../context/SettingsContext';
 import { uid } from '../utils/constants';
 import { playAlarmDouble, startRepeatAlarm, stopRepeatAlarm, primeAudio } from '../utils/audio';
 
@@ -41,8 +42,13 @@ export function formatMs(ms) {
 export function useFocusTimer(onComplete) {
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
+  const { settings, setSetting } = useSettings();
 
-  const [presets, setPresets] = useState(() => loadState(PRESETS_STORE, DEFAULT_PRESETS));
+  const [presets, setPresets] = useState(() => {
+    const synced = settings.focus?.presets;
+    if (Array.isArray(synced) && synced.length) return synced;
+    return loadState(PRESETS_STORE, DEFAULT_PRESETS);
+  });
   const [state, setState] = useState(() => ({ ...defaultTimer(), ...loadState(STORE, null) }));
   const [alarming, setAlarming] = useState(false);
 
@@ -50,6 +56,7 @@ export function useFocusTimer(onComplete) {
   stateRef.current = state;
 
   useEffect(() => saveState(PRESETS_STORE, presets), [presets]);
+  useEffect(() => setSetting('focus', (prev) => ({ ...(prev || {}), presets })), [presets, setSetting]);
   useEffect(() => saveState(STORE, state), [state]);
   useEffect(() => () => stopRepeatAlarm(), []);
 

@@ -25,8 +25,17 @@ import TrackersView from './components/TrackersView.jsx';
 import LabelManager from './components/LabelManager.jsx';
 import ConfirmDialog from './components/ConfirmDialog.jsx';
 import Toasts from './components/Toasts.jsx';
+import { SettingsProvider } from './context/SettingsContext.jsx';
 
 export default function App() {
+  return (
+    <SettingsProvider>
+      <AppShell />
+    </SettingsProvider>
+  );
+}
+
+function AppShell() {
   const { theme, toggleTheme } = useTheme();
   const now = useNow();
   const { session, user, loading, backend, signOut } = useAuth();

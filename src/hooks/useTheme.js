@@ -1,25 +1,23 @@
-import { useCallback, useEffect, useState } from 'react';
-import { loadState, saveState } from '../utils/storage';
-import { THEME_KEY } from '../utils/constants';
+import { useCallback, useEffect } from 'react';
+import { useSettings } from '../context/SettingsContext';
 
 export function useTheme() {
-  const [theme, setTheme] = useState(() => {
-    const saved = loadState(THEME_KEY, null);
-    if (saved === 'light' || saved === 'dark') return saved;
-    if (typeof window !== 'undefined' && window.matchMedia) {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    }
-    return 'light';
-  });
+  const { settings, setSetting } = useSettings();
+
+  const saved = settings.theme;
+  const theme = saved === 'light' || saved === 'dark'
+    ? saved
+    : typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light';
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-    saveState(THEME_KEY, theme);
   }, [theme]);
 
   const toggleTheme = useCallback(() => {
-    setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
-  }, []);
+    setSetting('theme', theme === 'dark' ? 'light' : 'dark');
+  }, [theme, setSetting]);
 
   return { theme, toggleTheme };
 }
