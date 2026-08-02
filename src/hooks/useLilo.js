@@ -54,8 +54,11 @@ export function useLilo() {
       supabase.from('lilo_entries').select('*'),
       supabase.from('lilo_submissions').select('*'),
     ]);
-    if (es) setEntries(es.map(fromRow));
-    if (subs) {
+    // Never clobber a valid local cache with an empty backend result. The backend
+    // can appear empty when its tables/migrations aren't set up or writes didn't
+    // persist, while the user still has legitimately generated entries locally.
+    if (es && (es.length || entriesRef.current.length === 0)) setEntries(es.map(fromRow));
+    if (subs && subs.length) {
       const map = {};
       for (const s of subs) if (s.submitted_at) map[s.month] = s.submitted_at;
       setSubmissions(map);
