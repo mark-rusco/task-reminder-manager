@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Menu, Bell, BellOff, Loader2 } from 'lucide-react';
+import { Menu, Bell, BellOff, Loader2, LayoutDashboard } from 'lucide-react';
 import { useTheme } from './hooks/useTheme';
 import { useNow } from './hooks/useNow';
 import { useTasks } from './hooks/useTasks';
+import { useDashboards } from './hooks/useDashboards';
 import { useAuth } from './context/AuthContext';
 import { useNotifications, showSystemNotification } from './hooks/useNotifications';
 import { playReminderBeep } from './utils/audio';
@@ -14,6 +15,9 @@ import Header, { viewMeta } from './components/Header.jsx';
 import StatsBar from './components/StatsBar.jsx';
 import TaskList from './components/TaskList.jsx';
 import TaskModal from './components/TaskModal.jsx';
+import DashboardModal from './components/DashboardModal.jsx';
+import DashboardsView from './components/DashboardsView.jsx';
+import DashboardDetail from './components/DashboardDetail.jsx';
 import LabelManager from './components/LabelManager.jsx';
 import ConfirmDialog from './components/ConfirmDialog.jsx';
 import Toasts from './components/Toasts.jsx';
@@ -37,10 +41,18 @@ export default function App() {
     pushToast,
     dismissToast,
   } = useTasks();
+  const {
+    dashboards,
+    addDashboard,
+    updateDashboard,
+    deleteDashboard,
+  } = useDashboards();
 
   const [view, setView] = useState({ type: 'inbox', labelId: null });
   const [search, setSearch] = useState('');
   const [modal, setModal] = useState({ open: false, initial: null, defaultDate: todayStr() });
+  const [dashboardModal, setDashboardModal] = useState({ open: false, initial: null });
+  const [selectedDashboardId, setSelectedDashboardId] = useState(null);
   const [labelManagerOpen, setLabelManagerOpen] = useState(false);
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -74,6 +86,7 @@ export default function App() {
 
   const navigate = useCallback((type, labelId = null) => {
     setView({ type, labelId });
+    setSelectedDashboardId(null);
     setSearch('');
     setMenuOpen(false);
     window.scrollTo({ top: 0 });
@@ -109,6 +122,40 @@ export default function App() {
     [deleteTask],
   );
 
+  const openDashboard = useCallback(
+    (id) => {
+      setSelectedDashboardId(id);
+      setView({ type: 'dashboards', labelId: null });
+      setMenuOpen(false);
+      window.scrollTo({ top: 0 });
+    },
+    [],
+  );
+
+  const saveDashboard = useCallback(
+    (data) => {
+      if (dashboardModal.initial) {
+        updateDashboard(dashboardModal.initial.id, data);
+        pushToast('Dashboard updated', 'success');
+      } else {
+        addDashboard(data);
+        pushToast('Dashboard added', 'success');
+      }
+      setDashboardModal({ open: false, initial: null });
+    },
+    [dashboardModal.initial, addDashboard, updateDashboard, pushToast],
+  );
+
+  const removeDashboard = useCallback(
+    (id) => {
+      setDashboardModal({ open: false, initial: null });
+      deleteDashboard(id);
+      if (selectedDashboardId === id) setSelectedDashboardId(null);
+      pushToast('Dashboard deleted', 'success');
+    },
+    [deleteDashboard, selectedDashboardId, pushToast],
+  );
+
   // Keyboard shortcuts.
   useEffect(() => {
     const onKey = (e) => {
@@ -116,6 +163,7 @@ export default function App() {
       const typing = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT');
       if (e.key === 'Escape') {
         setModal((m) => ({ ...m, open: false }));
+        setDashboardModal((m) => ({ ...m, open: false }));
         setLabelManagerOpen(false);
         setMenuOpen(false);
         return;
@@ -141,7 +189,7 @@ export default function App() {
   const activeView = useMemo(() => ({ ...view, search }), [view, search]);
 
   const counts = useMemo(() => {
-    const c = { inbox: 0, today: 0, upcoming: 0, completed: 0 };
+    const c = { inbox: 0, today: 0, upcoming: 0, completed: 0, dashboards: dashboards.length };
     for (const t of tasks) {
       if (t.completed) {
         c.completed++;
@@ -155,7 +203,7 @@ export default function App() {
       }
     }
     return c;
-  }, [tasks, now]);
+  }, [tasks, now, dashboards.length]);
 
   const stats = useMemo(() => {
     const completedToday = tasks.filter(
@@ -169,10 +217,14 @@ export default function App() {
     };
   }, [tasks, counts, now]);
 
-  const meta = viewMeta(activeView.type === 'label' ? activeView : { type: activeView.search ? 'search' : activeView.type, labelId: null }, labels, now);
-  const title = activeView.search ? 'Search results' : meta.title;
+  const meta =
+    activeView.type === 'dashboards'
+      ? { title: 'Dashboards', subtitle: 'Power BI inventory & progress tracker' }
+      : viewMeta(activeView.type === 'label' ? activeView : { type: activeView.search ? 'search' : activeView.type, labelId: null }, labels, now);
+  const title = activeView.type === 'dashboards' ? 'Dashboards' : activeView.search ? 'Search results' : meta.title;
 
   const defaultDateForView = activeView.type === 'upcoming' ? new Date(Date.now() + 86400000).toISOString().slice(0, 10) : todayStr();
+  const selectedDashboard = dashboards.find((d) => d.id === selectedDashboardId);
 
   if (loading) {
     return (
@@ -244,27 +296,60 @@ export default function App() {
         {!activeView.search && view.type === 'today' && <StatsBar stats={stats} />}
 
         <div className="content">
-          <TaskList
-            tasks={tasks}
-            labels={labels}
-            now={now}
-            view={activeView}
-            onToggle={toggleComplete}
-            onEdit={openEditTask}
-            onDelete={deleteTask}
-          />
+          {view.type === 'dashboards' ? (
+            selectedDashboard ? (
+              <DashboardDetail
+                dashboard={selectedDashboard}
+                tasks={tasks}
+                onBack={() => setSelectedDashboardId(null)}
+                onEdit={(d) => setDashboardModal({ open: true, initial: d })}
+                onOpenTask={openEditTask}
+                onToggleTask={toggleComplete}
+                onUpdateProgress={(id, v) => updateDashboard(id, { progress: v })}
+                onUpdateStatus={(id, v) => updateDashboard(id, { status: v })}
+              />
+            ) : (
+              <DashboardsView
+                dashboards={dashboards}
+                tasks={tasks}
+                now={now}
+                onNew={() => setDashboardModal({ open: true, initial: null })}
+                onEdit={(d) => setDashboardModal({ open: true, initial: d })}
+                onDelete={removeDashboard}
+                onOpen={openDashboard}
+              />
+            )
+          ) : (
+            <>
+              <TaskList
+                tasks={tasks}
+                labels={labels}
+                dashboards={dashboards}
+                now={now}
+                view={activeView}
+                onToggle={toggleComplete}
+                onEdit={openEditTask}
+                onDelete={deleteTask}
+              />
 
-          {view.type === 'completed' && counts.completed > 0 && (
-            <div className="content-footer">
-              <button type="button" className="btn btn-ghost" onClick={() => setClearConfirmOpen(true)}>
-                Clear completed
-              </button>
-            </div>
+              {view.type === 'completed' && counts.completed > 0 && (
+                <div className="content-footer">
+                  <button type="button" className="btn btn-ghost" onClick={() => setClearConfirmOpen(true)}>
+                    Clear completed
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </main>
 
-      <button className="fab" onClick={() => openNewTask(defaultDateForView)} aria-label="New task" title="New task (N)">
+      <button
+        className="fab"
+        onClick={() => (view.type === 'dashboards' ? setDashboardModal({ open: true, initial: null }) : openNewTask(defaultDateForView))}
+        aria-label={view.type === 'dashboards' ? 'New dashboard' : 'New task'}
+        title={view.type === 'dashboards' ? 'New dashboard' : 'New task (N)'}
+      >
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
           <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
         </svg>
@@ -276,10 +361,20 @@ export default function App() {
         open={modal.open}
         initial={modal.initial}
         labels={labels}
+        dashboards={dashboards}
         defaultDate={modal.defaultDate}
         onClose={() => setModal((m) => ({ ...m, open: false }))}
         onSave={saveTask}
         onDelete={removeTask}
+        onOpenDashboard={openDashboard}
+      />
+
+      <DashboardModal
+        open={dashboardModal.open}
+        initial={dashboardModal.initial}
+        onClose={() => setDashboardModal((m) => ({ ...m, open: false }))}
+        onSave={saveDashboard}
+        onDelete={removeDashboard}
       />
 
       <LabelManager

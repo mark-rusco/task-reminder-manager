@@ -3,6 +3,7 @@ import {
   Sun,
   CalendarClock,
   CheckCheck,
+  LayoutDashboard,
   Plus,
   MoreHorizontal,
 } from 'lucide-react';
@@ -12,6 +13,7 @@ const NAV = [
   { id: 'today', label: 'Today', icon: Sun },
   { id: 'upcoming', label: 'Upcoming', icon: CalendarClock },
   { id: 'completed', label: 'Completed', icon: CheckCheck },
+  { id: 'dashboards', label: 'Dashboards', icon: LayoutDashboard },
 ];
 
 export default function Sidebar({

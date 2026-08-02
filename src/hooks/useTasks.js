@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { loadState, saveState } from '../utils/storage';
 import {
   DEFAULT_LABELS,
+  DEMO_DASHBOARD_ID,
   LABELS_KEY,
   SNOOZE_KEY,
   TASKS_KEY,
@@ -45,6 +46,10 @@ function seedTasks() {
       reminder: { enabled: true, minutes: 5, notifiedAt: null },
       completed: false,
       createdAt: new Date().toISOString(),
+      taskType: 'meeting',
+      meetingNotes: 'Quick status sync. Key points: delivery is on track, sign-off expected Friday.',
+      screenshot: null,
+      dashboardId: DEMO_DASHBOARD_ID,
     },
     {
       id: uid(),
@@ -90,6 +95,10 @@ const toRow = (t, userId) => ({
   completed: !!t.completed,
   completed_at: t.completedAt || null,
   created_at: t.createdAt,
+  task_type: t.taskType || 'task',
+  meeting_notes: t.meetingNotes || null,
+  screenshot: t.screenshot || null,
+  dashboard_id: t.dashboardId || null,
 });
 
 const fromRow = (r) => ({
@@ -105,6 +114,10 @@ const fromRow = (r) => ({
   completed: r.completed,
   completedAt: r.completed_at,
   createdAt: r.created_at,
+  taskType: r.task_type || 'task',
+  meetingNotes: r.meeting_notes || '',
+  screenshot: r.screenshot || null,
+  dashboardId: r.dashboard_id || null,
 });
 
 export function useTasks() {
@@ -251,6 +264,10 @@ export function useTasks() {
         createdAt: new Date().toISOString(),
         reminder: { enabled: false, minutes: 0, notifiedAt: null },
         recurrence: null,
+        taskType: 'task',
+        meetingNotes: '',
+        screenshot: null,
+        dashboardId: null,
         ...data,
       };
       setTasks((prev) => [task, ...prev]);

@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { X, Trash2, Calendar, Clock, Flag } from 'lucide-react';
-import { PRIORITIES, priorityMeta } from '../utils/constants';
+import { X, Trash2, Calendar, Flag, Users, Briefcase, Upload, ExternalLink, Loader2 } from 'lucide-react';
+import { PRIORITIES, priorityMeta, TASK_TYPES } from '../utils/constants';
 import RecurrenceEditor from './RecurrenceEditor.jsx';
 import ReminderEditor from './ReminderEditor.jsx';
+import TimePicker from './TimePicker.jsx';
 import { DEFAULT_RECURRENCE } from '../utils/recurrence';
 import { todayStr, formatDueDateTime } from '../utils/dates';
+import { fileToDataUrl } from '../utils/image';
 
 const EMPTY_FORM = {
   title: '',
@@ -15,17 +17,34 @@ const EMPTY_FORM = {
   labels: [],
   recurrence: DEFAULT_RECURRENCE(),
   reminder: { enabled: false, minutes: 10, notifiedAt: null },
+  taskType: 'task',
+  meetingNotes: '',
+  screenshot: null,
+  dashboardId: null,
 };
 
-export default function TaskModal({ open, initial, labels, defaultDate, onClose, onSave, onDelete }) {
+export default function TaskModal({
+  open,
+  initial,
+  labels,
+  dashboards,
+  defaultDate,
+  onClose,
+  onSave,
+  onDelete,
+  onOpenDashboard,
+}) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const titleRef = useRef(null);
+  const fileRef = useRef(null);
   const editing = !!initial;
 
   useEffect(() => {
     if (open) {
       setConfirmDelete(false);
+      setUploading(false);
       if (initial) {
         setForm({
           title: initial.title || '',
@@ -40,6 +59,10 @@ export default function TaskModal({ open, initial, labels, defaultDate, onClose,
           reminder: initial.reminder
             ? { enabled: !!initial.reminder.enabled, minutes: initial.reminder.minutes || 10, notifiedAt: null }
             : { enabled: false, minutes: 10, notifiedAt: null },
+          taskType: initial.taskType || 'task',
+          meetingNotes: initial.meetingNotes || '',
+          screenshot: initial.screenshot || null,
+          dashboardId: initial.dashboardId || null,
         });
       } else {
         setForm({ ...EMPTY_FORM, dueDate: defaultDate || todayStr() });
@@ -51,6 +74,7 @@ export default function TaskModal({ open, initial, labels, defaultDate, onClose,
   if (!open) return null;
 
   const set = (patch) => setForm((f) => ({ ...f, ...patch }));
+  const isMeeting = form.taskType === 'meeting';
 
   const toggleLabel = (id) => {
     set({ labels: form.labels.includes(id) ? form.labels.filter((l) => l !== id) : [...form.labels, id] });
@@ -72,8 +96,29 @@ export default function TaskModal({ open, initial, labels, defaultDate, onClose,
       labels: form.labels,
       recurrence: form.recurrence,
       reminder: form.reminder,
+      taskType: form.taskType,
+      meetingNotes: form.meetingNotes.trim(),
+      screenshot: form.screenshot,
+      dashboardId: form.dashboardId || null,
     });
   };
+
+  const onPickFile = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setUploading(true);
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      set({ screenshot: dataUrl });
+    } catch {
+      /* ignore invalid files */
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const linkedDashboard = dashboards.find((d) => d.id === form.dashboardId);
 
   const quickDates = [
     { label: 'Today', value: todayStr() },
@@ -92,10 +137,24 @@ export default function TaskModal({ open, initial, labels, defaultDate, onClose,
 
         <form onSubmit={submit}>
           <div className="modal-body">
+            <div className="seg task-type-seg" role="group" aria-label="Task type">
+              {TASK_TYPES.map((t) => (
+                <button
+                  key={t.value}
+                  type="button"
+                  className={form.taskType === t.value ? 'on' : ''}
+                  onClick={() => set({ taskType: t.value })}
+                >
+                  {t.value === 'meeting' ? <Users size={14} /> : <Briefcase size={14} />}
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
             <input
               ref={titleRef}
               className="input input-title"
-              placeholder="What needs to be done?"
+              placeholder={isMeeting ? 'Meeting title — e.g. Stakeholder sync' : 'What needs to be done?'}
               value={form.title}
               onChange={(e) => set({ title: e.target.value })}
               required
@@ -104,13 +163,13 @@ export default function TaskModal({ open, initial, labels, defaultDate, onClose,
             <textarea
               className="input"
               rows={2}
-              placeholder="Add notes (optional)"
+              placeholder={isMeeting ? 'Agenda (optional)' : 'Add notes (optional)'}
               value={form.notes}
               onChange={(e) => set({ notes: e.target.value })}
             />
 
             <div className="form-section">
-              <label className="form-label">Due date</label>
+              <label className="form-label">Due date & time</label>
               <div className="quick-date-row">
                 {quickDates.map((q) => (
                   <button
@@ -133,17 +192,70 @@ export default function TaskModal({ open, initial, labels, defaultDate, onClose,
                     onChange={(e) => set({ dueDate: e.target.value })}
                   />
                 </div>
-                <div className="input-icon">
-                  <Clock size={15} />
-                  <input
-                    type="time"
-                    className="input"
-                    value={form.dueTime}
-                    onChange={(e) => set({ dueTime: e.target.value })}
-                  />
-                </div>
               </div>
+              <TimePicker value={form.dueTime} onChange={(v) => set({ dueTime: v })} />
             </div>
+
+            {isMeeting && (
+              <div className="form-section meeting-section">
+                <label className="form-label">
+                  <Users size={13} /> Meeting recap & attachments
+                </label>
+                <textarea
+                  className="input"
+                  rows={3}
+                  placeholder="Log your notes — decisions, action items, next steps…"
+                  value={form.meetingNotes}
+                  onChange={(e) => set({ meetingNotes: e.target.value })}
+                />
+
+                <div className="screenshot-upload">
+                  <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={onPickFile} />
+                  <button type="button" className="btn" onClick={() => fileRef.current?.click()} disabled={uploading}>
+                    {uploading ? <Loader2 size={15} className="spin" /> : <Upload size={15} />}
+                    {form.screenshot ? 'Replace screenshot' : 'Upload screenshot'}
+                  </button>
+                  {form.screenshot && (
+                    <div className="screenshot-preview">
+                      <img src={form.screenshot} alt="Meeting screenshot preview" />
+                      <button type="button" className="icon-btn sm" onClick={() => set({ screenshot: null })} title="Remove screenshot">
+                        <X size={13} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <label className="form-label">Link to dashboard</label>
+                <div className="link-dashboard-row">
+                  <select
+                    className="input"
+                    value={form.dashboardId || ''}
+                    onChange={(e) => set({ dashboardId: e.target.value || null })}
+                    aria-label="Link to dashboard"
+                  >
+                    <option value="">No dashboard</option>
+                    {dashboards.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name}
+                      </option>
+                    ))}
+                  </select>
+                  {linkedDashboard && (
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      onClick={() => onOpenDashboard && onOpenDashboard(linkedDashboard.id)}
+                      title="Open dashboard"
+                    >
+                      <ExternalLink size={14} /> Open
+                    </button>
+                  )}
+                </div>
+                {linkedDashboard && (
+                  <p className="form-hint">Recap this meeting from “{linkedDashboard.name}” in the Dashboards view.</p>
+                )}
+              </div>
+            )}
 
             <div className="form-section">
               <label className="form-label">Priority</label>
@@ -219,7 +331,7 @@ export default function TaskModal({ open, initial, labels, defaultDate, onClose,
                 Cancel
               </button>
               <button type="submit" className="btn btn-primary">
-                {editing ? 'Save changes' : 'Add task'}
+                {editing ? 'Save changes' : isMeeting ? 'Add meeting' : 'Add task'}
               </button>
             </div>
           </div>
@@ -228,8 +340,8 @@ export default function TaskModal({ open, initial, labels, defaultDate, onClose,
         {confirmDelete && (
           <div className="confirm-overlay">
             <div className="confirm-box">
-              <h3>Delete this task?</h3>
-              <p>This cannot be undone.</p>
+              <h3>Delete this {isMeeting ? 'meeting' : 'task'}?</h3>
+              <p>Notes and screenshots will be removed too.</p>
               <div className="confirm-actions">
                 <button type="button" className="btn" onClick={() => setConfirmDelete(false)}>
                   Cancel

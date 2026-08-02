@@ -1,15 +1,17 @@
 import { timeBucket, formatDueDate, isOverdue } from '../utils/dates';
 import { priorityMeta } from '../utils/constants';
 import { hasRecurrence, describeRecurrence } from '../utils/recurrence';
-import { Repeat2, Bell, Flag, Pencil, Trash2 } from 'lucide-react';
+import { Repeat2, Bell, Flag, Pencil, Trash2, Users, Link2, Image as ImageIcon } from 'lucide-react';
 
-export default function TaskItem({ task, labels, now, onToggle, onEdit, onDelete }) {
+export default function TaskItem({ task, labels, dashboards, now, onToggle, onEdit, onDelete }) {
   const bucket = timeBucket(task, now);
   const overdue = isOverdue(task, now);
   const prio = priorityMeta(task.priority);
   const taskLabels = (task.labels || []).map((id) => labels.find((l) => l.id === id)).filter(Boolean);
   const recurring = hasRecurrence(task.recurrence);
   const hasReminder = task.reminder?.enabled;
+  const isMeeting = task.taskType === 'meeting';
+  const linkedDashboard = dashboards.find((d) => d.id === task.dashboardId);
 
   const dueClass =
     task.completed ? 'due-done' : overdue ? 'due-overdue' : bucket === 'today' ? 'due-today' : '';
@@ -31,18 +33,36 @@ export default function TaskItem({ task, labels, now, onToggle, onEdit, onDelete
 
         <div className="task-body" onClick={() => onEdit(task)} role="button" tabIndex={0}>
           <div className="task-title-row">
+            {isMeeting && (
+              <span className="chip chip-meeting" title="Meeting">
+                <Users size={12} />
+                Meeting
+              </span>
+            )}
             {task.priority !== 'none' && task.priority !== 'low' && (
               <Flag className="task-flag" size={14} style={{ color: prio.color }} aria-label={`${prio.label} priority`} />
             )}
             <span className="task-title">{task.title}</span>
           </div>
 
-          {(task.notes || taskLabels.length || task.dueDate || recurring || hasReminder) && (
+          {(task.notes || taskLabels.length || task.dueDate || recurring || hasReminder || linkedDashboard || task.meetingNotes || task.screenshot) && (
             <div className="task-meta">
               {task.dueDate && (
                 <span className={`task-due ${dueClass}`}>
                   {formatDueDate(task.dueDate)}
                   {task.dueTime ? ` · ${task.dueTime}` : ''}
+                </span>
+              )}
+              {linkedDashboard && (
+                <span className="chip chip-dash" title={`Linked to ${linkedDashboard.name}`}>
+                  <Link2 size={11} />
+                  {linkedDashboard.name}
+                </span>
+              )}
+              {task.screenshot && (
+                <span className="chip chip-shot" title="Screenshot attached">
+                  <ImageIcon size={11} />
+                  Shot
                 </span>
               )}
               {recurring && (
@@ -62,6 +82,13 @@ export default function TaskItem({ task, labels, now, onToggle, onEdit, onDelete
                   {l.name}
                 </span>
               ))}
+            </div>
+          )}
+
+          {isMeeting && (task.meetingNotes || task.screenshot) && (
+            <div className="task-meeting-excerpt">
+              {task.meetingNotes && <p className="task-excerpt-notes">{task.meetingNotes}</p>}
+              {task.screenshot && <img src={task.screenshot} alt={`Screenshot for ${task.title}`} className="task-excerpt-shot" />}
             </div>
           )}
         </div>

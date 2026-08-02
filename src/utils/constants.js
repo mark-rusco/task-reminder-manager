@@ -27,6 +27,23 @@ export const REMINDER_PRESETS = [
   { label: '1 day before', minutes: 1440 },
 ];
 
+export const TASK_TYPES = [
+  { value: 'task', label: 'Task' },
+  { value: 'meeting', label: 'Meeting' },
+];
+
+export const DASHBOARD_STATUSES = [
+  { value: 'planning', label: 'Planning', color: '#94a3b8' },
+  { value: 'in-progress', label: 'In Progress', color: '#f59e0b' },
+  { value: 'in-review', label: 'In Review', color: '#8b5cf6' },
+  { value: 'published', label: 'Published', color: '#10b981' },
+  { value: 'deprecated', label: 'Deprecated', color: '#f43f5e' },
+];
+
+export function dashboardStatusMeta(value) {
+  return DASHBOARD_STATUSES.find((s) => s.value === value) || DASHBOARD_STATUSES[0];
+}
+
 export function uid() {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
   return `id-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
@@ -36,4 +53,8 @@ export const THEME_KEY = 'theme';
 export const NOTIF_KEY = 'notifications';
 export const LABELS_KEY = 'labels';
 export const TASKS_KEY = 'tasks';
+export const DASHBOARDS_KEY = 'dashboards';
 export const SNOOZE_KEY = 'snoozed';
+
+/** Shared stable UUID used by the demo dashboard + its linked sample meeting. */
+export const DEMO_DASHBOARD_ID = '00000000-0000-4000-8000-000000000001';
