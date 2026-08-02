@@ -5,6 +5,7 @@ import {
   CheckCheck,
   LayoutDashboard,
   ClipboardList,
+  CalendarRange,
   Plus,
   MoreHorizontal,
   ExternalLink,
@@ -17,6 +18,7 @@ const NAV = [
   { id: 'completed', label: 'Completed', icon: CheckCheck },
   { id: 'dashboards', label: 'Dashboards', icon: LayoutDashboard },
   { id: 'lilo', label: 'LILO Tracker', icon: ClipboardList },
+  { id: 'tracker', label: 'Leave & RTO', icon: CalendarRange },
 ];
 
 export default function Sidebar({
