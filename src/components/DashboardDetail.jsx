@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { ArrowLeft, ExternalLink, Pencil, Users, Calendar, StickyNote, Image as ImageIcon, CheckCheck } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Pencil, Plus, Users, Calendar, StickyNote, Image as ImageIcon, CheckCheck } from 'lucide-react';
 import { DASHBOARD_STATUSES, dashboardStatusMeta } from '../utils/constants';
 import { formatDueDate } from '../utils/dates';
 
@@ -9,6 +9,7 @@ export default function DashboardDetail({
   onBack,
   onEdit,
   onOpenTask,
+  onNewTask,
   onToggleTask,
   onUpdateProgress,
   onUpdateStatus,
@@ -51,6 +52,11 @@ export default function DashboardDetail({
             <a className="btn btn-primary" href={dashboard.url} target="_blank" rel="noreferrer">
               <ExternalLink size={16} /> Open in Power BI
             </a>
+          )}
+          {typeof onNewTask === 'function' && (
+            <button type="button" className="btn" onClick={() => onNewTask('task')} title="Add a linked task for this dashboard">
+              <Plus size={16} /> New task
+            </button>
           )}
           <button type="button" className="btn" onClick={() => onEdit(dashboard)}>
             <Pencil size={15} /> Edit
@@ -111,7 +117,12 @@ export default function DashboardDetail({
 
         <section className="panel">
           <h3 className="panel-title">
-            <Users size={15} /> Meetings & recap ({meetings.length})
+            <span className="panel-title-text"><Users size={15} /> Meetings & recap ({meetings.length})</span>
+            {typeof onNewTask === 'function' && (
+              <button type="button" className="icon-btn sm" onClick={() => onNewTask('meeting')} title="Add a linked meeting">
+                <Plus size={15} />
+              </button>
+            )}
           </h3>
           {meetings.length === 0 ? (
             <p className="panel-empty">No meetings linked yet. Open a meeting task and link it to this dashboard.</p>

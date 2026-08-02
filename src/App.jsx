@@ -62,7 +62,7 @@ export default function App() {
   const [view, setView] = useState({ type: 'inbox', labelId: null });
   const [search, setSearch] = useState('');
 
-  const [modal, setModal] = useState({ open: false, initial: null, defaultDate: todayStr() });
+  const [modal, setModal] = useState({ open: false, initial: null, defaultDate: todayStr(), defaultDashboardIds: [], defaultType: 'task' });
   const [dashboardModal, setDashboardModal] = useState({ open: false, initial: null });
   const [selectedDashboardId, setSelectedDashboardId] = useState(null);
   const [labelManagerOpen, setLabelManagerOpen] = useState(false);
@@ -104,8 +104,14 @@ export default function App() {
     window.scrollTo({ top: 0 });
   }, []);
 
-  const openNewTask = useCallback((date) => {
-    setModal({ open: true, initial: null, defaultDate: date || todayStr() });
+  const openNewTask = useCallback((date, opts = {}) => {
+    setModal({
+      open: true,
+      initial: null,
+      defaultDate: date || todayStr(),
+      defaultDashboardIds: opts.dashboardIds || [],
+      defaultType: opts.type || 'task',
+    });
   }, []);
 
   const openEditTask = useCallback((task) => {
@@ -330,6 +336,7 @@ export default function App() {
                 onBack={() => setSelectedDashboardId(null)}
                 onEdit={(d) => setDashboardModal({ open: true, initial: d })}
                 onOpenTask={openEditTask}
+                onNewTask={(type) => openNewTask(todayStr(), { dashboardIds: [selectedDashboard.id], type })}
                 onToggleTask={toggleComplete}
                 onUpdateProgress={(id, v) => updateDashboard(id, { progress: v })}
                 onUpdateStatus={(id, v) => updateDashboard(id, { status: v })}
@@ -357,6 +364,7 @@ export default function App() {
                 onEdit={openEditTask}
                 onDelete={deleteTask}
                 onOpenDashboard={openDashboard}
+                onCreate={() => openNewTask(defaultDateForView)}
               />
 
               {view.type === 'completed' && counts.completed > 0 && (
@@ -392,6 +400,8 @@ export default function App() {
         labels={labels}
         dashboards={dashboards}
         defaultDate={modal.defaultDate}
+        defaultDashboardIds={modal.defaultDashboardIds}
+        defaultType={modal.defaultType}
         onClose={() => setModal((m) => ({ ...m, open: false }))}
         onSave={saveTask}
         onDelete={removeTask}

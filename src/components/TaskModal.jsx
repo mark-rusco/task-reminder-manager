@@ -35,6 +35,8 @@ export default function TaskModal({
   labels,
   dashboards,
   defaultDate,
+  defaultDashboardIds = [],
+  defaultType = 'task',
   onClose,
   onSave,
   onDelete,
@@ -43,6 +45,7 @@ export default function TaskModal({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [timePickerOpen, setTimePickerOpen] = useState(false);
+  const [titleTouched, setTitleTouched] = useState(false);
   const titleRef = useRef(null);
   const fileRef = useRef(null);
   const prevTimeRef = useRef('');
@@ -53,6 +56,7 @@ export default function TaskModal({
       setConfirmDelete(false);
       setUploading(false);
       setTimePickerOpen(false);
+      setTitleTouched(false);
       if (initial) {
         setForm({
           title: initial.title || '',
@@ -73,11 +77,11 @@ export default function TaskModal({
           dashboardIds: initial.dashboardIds || [],
         });
       } else {
-        setForm({ ...EMPTY_FORM, dueDate: defaultDate || todayStr() });
+        setForm({ ...EMPTY_FORM, dueDate: defaultDate || todayStr(), taskType: defaultType, dashboardIds: defaultDashboardIds });
       }
       window.setTimeout(() => titleRef.current?.focus(), 60);
     }
-  }, [open, initial, defaultDate]);
+  }, [open, initial, defaultDate, defaultDashboardIds, defaultType]);
 
   if (!open) return null;
 
@@ -93,6 +97,7 @@ export default function TaskModal({
     e.preventDefault();
     const title = form.title.trim();
     if (!title) {
+      setTitleTouched(true);
       titleRef.current?.focus();
       return;
     }
@@ -214,7 +219,7 @@ export default function TaskModal({
 
             <input
               ref={titleRef}
-              className="input input-title"
+              className={`input input-title ${titleTouched && !form.title.trim() ? 'input-error' : ''}`}
               placeholder={
                 isMeeting
                   ? 'Meeting title — e.g. Stakeholder sync'
@@ -224,8 +229,15 @@ export default function TaskModal({
               }
               value={form.title}
               onChange={(e) => set({ title: e.target.value })}
+              aria-invalid={titleTouched && !form.title.trim()}
+              aria-describedby="task-title-error"
               required
             />
+            {titleTouched && !form.title.trim() && (
+              <p className="field-error" id="task-title-error" role="alert">
+                Please give your {isMeeting ? 'meeting' : isRefresh ? 'refresh' : 'task'} a title.
+              </p>
+            )}
 
             <textarea
               className="input"
