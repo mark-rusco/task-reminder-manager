@@ -841,6 +841,8 @@ kbd {
   max-height: calc(100vh - 48px);
   display: flex;
   flex-direction: column;
+  position: relative;
+  overflow: hidden;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -848,11 +850,19 @@ kbd {
   animation: popIn 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.modal > form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
 .modal-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 20px 24px 0;
+  flex-shrink: 0;
 }
 
 .modal-head h2 {
@@ -884,6 +894,8 @@ kbd {
   display: flex;
   flex-direction: column;
   gap: 18px;
+  flex: 1;
+  min-height: 0;
 }
 
 .modal-foot {
@@ -894,6 +906,7 @@ kbd {
   padding: 16px 24px 20px;
   border-top: 1px solid var(--border);
   margin-top: 12px;
+  flex-shrink: 0;
 }
 
 .modal-foot-spacer {
@@ -1106,6 +1119,7 @@ textarea.input {
   place-items: center;
   padding: 20px;
   z-index: 5;
+  overflow-y: auto;
   animation: fadeIn 160ms ease;
 }
 
@@ -2085,127 +2099,185 @@ textarea.input {
   flex: 1;
 }
 
-/* ---------- Analog time picker ---------- */
+/* ---------- Material time picker dialog ---------- */
 
-.time-picker {
-  margin-top: 12px;
+.time-popover-overlay {
+  position: absolute;
+  inset: 0;
+  background: var(--scrim);
+  border-radius: var(--radius-lg);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  z-index: 6;
+  overflow-y: auto;
+  animation: fadeIn 160ms ease;
 }
 
-.time-picker-display {
+.mp-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 340px;
+  overflow: hidden;
+  animation: popIn 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mp-header {
+  background: var(--primary-soft);
+  padding: 18px 20px;
+}
+
+.mp-time {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
+  justify-content: center;
+  gap: 6px;
 }
 
-.time-picker-display strong {
-  font-size: 28px;
+.mp-time-seg {
+  border: none;
+  background: transparent;
+  font-size: 42px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   letter-spacing: 1px;
-  color: var(--text);
+  color: var(--text-3);
   font-family: var(--font);
+  padding: 2px 6px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: color var(--transition), background var(--transition);
 }
 
-.time-picker-clock {
-  width: 208px;
-  height: 208px;
+.mp-time-seg:hover {
+  background: var(--surface-3);
+}
+
+.mp-time-seg.on {
+  color: var(--primary);
+}
+
+.mp-colon {
+  font-size: 34px;
+  font-weight: 700;
+  color: var(--text-3);
+}
+
+.mp-ampm-label {
+  margin-left: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-2);
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.mp-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 14px 8px 8px;
+}
+
+.mp-clock {
+  width: 216px;
+  height: 216px;
   display: block;
-  margin: 0 auto;
   touch-action: none;
+  cursor: crosshair;
 }
 
-.clock-rim {
-  fill: none;
-  stroke: var(--border);
-  stroke-width: 1.5;
-}
-
-.clock-face {
+.mp-face {
   fill: var(--surface-2);
   stroke: var(--border);
   stroke-width: 1;
 }
 
-.tick-major {
-  stroke: var(--text-3);
-  stroke-width: 2;
-}
-
-.tick-minor {
+.mp-tick {
   stroke: var(--border-strong);
   stroke-width: 1;
 }
 
-.clock-hour-label {
-  fill: var(--text-2);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.hand-minute {
-  stroke: var(--primary-strong);
-  stroke-width: 3;
-  stroke-linecap: round;
-}
-
-.hand-hour {
-  stroke: var(--primary);
-  stroke-width: 5;
-  stroke-linecap: round;
-}
-
-.clock-center {
-  fill: var(--text);
-}
-
-.clock-mode-ring {
-  fill: none;
-  stroke: var(--primary);
+.mp-tick-major {
+  stroke: var(--text-3);
   stroke-width: 1.5;
-  stroke-dasharray: 4 4;
-  opacity: 0.55;
-  transition: r 160ms ease, opacity var(--transition);
+}
+
+.mp-select {
+  fill: transparent;
+  transition: fill 120ms ease;
+}
+
+.mp-select-on {
+  fill: var(--primary);
+}
+
+.mp-num {
+  fill: var(--text-2);
+  font-size: 14px;
+  font-weight: 600;
   pointer-events: none;
 }
 
-.clock-mode-ring.dragging {
-  opacity: 1;
+.mp-num-on {
+  fill: var(--primary-text);
+  font-weight: 700;
 }
 
-.time-picker-controls {
+.mp-hand {
+  stroke: var(--primary);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.mp-hand-dot {
+  fill: var(--primary);
+}
+
+.mp-center {
+  fill: var(--text);
+}
+
+.mp-ampm {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 12px;
-  flex-wrap: wrap;
-}
-
-.time-picker-controls .seg button {
-  display: inline-flex;
-  align-items: center;
-  min-width: 58px;
-  justify-content: center;
-}
-
-.time-nudge {
-  display: inline-flex;
-  align-items: center;
+  flex-direction: column;
   gap: 6px;
 }
 
-.time-nudge-label {
-  font-size: 11px;
+.mp-ampm button {
+  width: 46px;
+  height: 34px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: 13px;
   font-weight: 700;
-  color: var(--text-3);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all var(--transition);
 }
 
-.time-picker-hint {
-  text-align: center;
-  margin-top: 10px;
+.mp-ampm button:hover {
+  border-color: var(--primary);
+}
+
+.mp-ampm button.on {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-text);
+}
+
+.mp-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px 16px;
 }
 
 /* ---------- Collapsible time field ---------- */
@@ -2267,15 +2339,6 @@ textarea.input {
 
 .time-field-chevron.rotated {
   transform: rotate(180deg);
-}
-
-.time-picker-wrap {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface-2);
-  padding: 14px;
-  margin-bottom: 4px;
-  animation: fadeIn 160ms ease;
 }
 
 /* ---------- Meeting chips in task list ---------- */
@@ -2684,6 +2747,276 @@ textarea.input {
 .linked-task-label {
   cursor: pointer;
   color: var(--text);
+}
+
+/* ---------- LILO Tracker ---------- */
+
+.lilo-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.lilo-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.lilo-month {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.lilo-month input {
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  padding: 9px 12px;
+  font: inherit;
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.lilo-month input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+
+.lilo-export {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-submitted {
+  background: var(--success);
+  color: #fff;
+}
+
+.btn-submitted:hover {
+  background: var(--success);
+  opacity: 0.9;
+}
+
+.btn.btn-ghost.armed {
+  border-color: var(--danger);
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.lilo-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+}
+
+.lilo-banner.submitted {
+  color: var(--success);
+  background: var(--success-soft);
+  border-color: transparent;
+}
+
+.lilo-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 5px 12px;
+}
+
+.stat-pill.st-scheduled {
+  color: var(--primary);
+  background: var(--primary-soft);
+  border-color: transparent;
+}
+
+.stat-pill.st-rest-day {
+  color: var(--text-3);
+  background: var(--surface-3);
+  border-color: transparent;
+}
+
+.stat-pill.st-pto {
+  color: var(--warning);
+  background: var(--warning-soft);
+  border-color: transparent;
+}
+
+.stat-pill.st-sick {
+  color: var(--danger);
+  background: var(--danger-soft);
+  border-color: transparent;
+}
+
+.stat-pill.edited {
+  color: #b45309;
+  background: rgba(245, 158, 11, 0.16);
+  border-color: transparent;
+}
+
+.lilo-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--text-3);
+}
+
+.legend-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.legend-swatch.edited {
+  background: rgba(245, 158, 11, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.55);
+}
+
+.lilo-table-wrap {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow-x: auto;
+  box-shadow: var(--shadow-sm);
+}
+
+.lilo-table {
+  width: 100%;
+  min-width: 1080px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.lilo-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  text-align: left;
+  padding: 10px 10px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.lilo-table tbody td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.lilo-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.lilo-table tbody tr:hover {
+  background: var(--surface-2);
+}
+
+.lilo-table tbody tr.is-weekend {
+  background: color-mix(in srgb, var(--surface-3) 45%, transparent);
+}
+
+.lilo-table tbody tr.is-weekend:hover {
+  background: var(--surface-3);
+}
+
+.lilo-cell {
+  width: 100%;
+  min-width: 96px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  padding: 6px 8px;
+  outline: none;
+  transition: border-color var(--transition), background var(--transition), box-shadow var(--transition);
+}
+
+.lilo-cell:hover {
+  border-color: var(--border-strong);
+  background: var(--surface);
+}
+
+.lilo-cell:focus {
+  border-color: var(--primary);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+
+.lilo-cell.edit {
+  background: rgba(245, 158, 11, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.5);
+}
+
+.lilo-cell.edit:hover {
+  background: rgba(245, 158, 11, 0.24);
+}
+
+.lilo-cell.remarks {
+  min-width: 160px;
+}
+
+.col-date {
+  width: 78px;
+  white-space: nowrap;
+}
+
+.col-date strong {
+  display: block;
+  font-size: 14px;
+  line-height: 1.1;
+}
+
+.col-date span {
+  font-size: 11px;
+  color: var(--text-3);
+  font-weight: 600;
+}
+
+.col-actions {
+  width: 40px;
+  text-align: right;
+}
+
+@media (max-width: 640px) {
+  .lilo-toolbar {
+    align-items: stretch;
+  }
+  .lilo-month {
+    flex: 1 1 100%;
+  }
 }
 
 /* ---------- Accessibility ---------- */

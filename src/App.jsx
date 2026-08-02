@@ -4,6 +4,7 @@ import { useTheme } from './hooks/useTheme';
 import { useNow } from './hooks/useNow';
 import { useTasks } from './hooks/useTasks';
 import { useDashboards } from './hooks/useDashboards';
+import { useLilo } from './hooks/useLilo';
 import { useAuth } from './context/AuthContext';
 import { useNotifications, showSystemNotification } from './hooks/useNotifications';
 import { playReminderBeep } from './utils/audio';
@@ -18,6 +19,7 @@ import TaskModal from './components/TaskModal.jsx';
 import DashboardModal from './components/DashboardModal.jsx';
 import DashboardsView from './components/DashboardsView.jsx';
 import DashboardDetail from './components/DashboardDetail.jsx';
+import LiloView from './components/LiloView.jsx';
 import LabelManager from './components/LabelManager.jsx';
 import ConfirmDialog from './components/ConfirmDialog.jsx';
 import Toasts from './components/Toasts.jsx';
@@ -47,9 +49,19 @@ export default function App() {
     updateDashboard,
     deleteDashboard,
   } = useDashboards();
+  const {
+    entries: liloEntries,
+    submissions: liloSubmissions,
+    updateEntry,
+    addEntries,
+    removeEntry,
+    resetMonth,
+    setSubmitted,
+  } = useLilo();
 
   const [view, setView] = useState({ type: 'inbox', labelId: null });
   const [search, setSearch] = useState('');
+
   const [modal, setModal] = useState({ open: false, initial: null, defaultDate: todayStr() });
   const [dashboardModal, setDashboardModal] = useState({ open: false, initial: null });
   const [selectedDashboardId, setSelectedDashboardId] = useState(null);
@@ -220,8 +232,10 @@ export default function App() {
   const meta =
     activeView.type === 'dashboards'
       ? { title: 'Dashboards', subtitle: 'Power BI inventory & progress tracker' }
-      : viewMeta(activeView.type === 'label' ? activeView : { type: activeView.search ? 'search' : activeView.type, labelId: null }, labels, now);
-  const title = activeView.type === 'dashboards' ? 'Dashboards' : activeView.search ? 'Search results' : meta.title;
+      : activeView.type === 'lilo'
+        ? { title: 'LILO Tracker', subtitle: 'Monthly leave-in / leave-out sheet' }
+        : viewMeta(activeView.type === 'label' ? activeView : { type: activeView.search ? 'search' : activeView.type, labelId: null }, labels, now);
+  const title = activeView.type === 'dashboards' || activeView.type === 'lilo' ? meta.title : activeView.search ? 'Search results' : meta.title;
 
   const defaultDateForView = activeView.type === 'upcoming' ? new Date(Date.now() + 86400000).toISOString().slice(0, 10) : todayStr();
   const selectedDashboard = dashboards.find((d) => d.id === selectedDashboardId);
@@ -296,7 +310,18 @@ export default function App() {
         {!activeView.search && view.type === 'today' && <StatsBar stats={stats} />}
 
         <div className="content">
-          {view.type === 'dashboards' ? (
+          {view.type === 'lilo' ? (
+            <LiloView
+              entries={liloEntries}
+              submissions={liloSubmissions}
+              onUpdate={updateEntry}
+              onAddEntries={addEntries}
+              onRemove={removeEntry}
+              onReset={resetMonth}
+              onSetSubmitted={setSubmitted}
+              onToast={pushToast}
+            />
+          ) : view.type === 'dashboards' ? (
             selectedDashboard ? (
               <DashboardDetail
                 dashboard={selectedDashboard}
@@ -344,16 +369,18 @@ export default function App() {
         </div>
       </main>
 
-      <button
-        className="fab"
-        onClick={() => (view.type === 'dashboards' ? setDashboardModal({ open: true, initial: null }) : openNewTask(defaultDateForView))}
-        aria-label={view.type === 'dashboards' ? 'New dashboard' : 'New task'}
-        title={view.type === 'dashboards' ? 'New dashboard' : 'New task (N)'}
-      >
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
-          <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-        </svg>
-      </button>
+      {view.type !== 'lilo' && (
+        <button
+          className="fab"
+          onClick={() => (view.type === 'dashboards' ? setDashboardModal({ open: true, initial: null }) : openNewTask(defaultDateForView))}
+          aria-label={view.type === 'dashboards' ? 'New dashboard' : 'New task'}
+          title={view.type === 'dashboards' ? 'New dashboard' : 'New task (N)'}
+        >
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
+            <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+          </svg>
+        </button>
+      )}
 
       <FocusTimer onComplete={onTimerComplete} />
 

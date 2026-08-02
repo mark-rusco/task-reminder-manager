@@ -55,6 +55,31 @@ export const LABELS_KEY = 'labels';
 export const TASKS_KEY = 'tasks';
 export const DASHBOARDS_KEY = 'dashboards';
 export const SNOOZE_KEY = 'snoozed';
+export const LILO_KEY = 'lilo';
+export const LILO_SUBMISSIONS_KEY = 'lilo-submissions';
 
 /** Shared stable UUID used by the demo dashboard + its linked sample meeting. */
 export const DEMO_DASHBOARD_ID = '00000000-0000-4000-8000-000000000001';
+
+// ---- LILO Tracker ----
+
+export const LILO_STATUSES = ['Scheduled', 'Rest Day', 'PTO', 'Sick'];
+
+export const LILO_LOCATIONS = ['WFH', 'Office - Manila', 'Office - Muntinlupa'];
+
+export const LILO_DEFAULTS = {
+  brgType: 'Non-BAU BRG',
+  schedType: '5 X 9',
+  eid: 'mark.rusco',
+  startTime: '04:00 PM',
+  endTime: '01:00 AM',
+  location: 'WFH',
+  remarks: '',
+};
+
+/** Rest day on weekends, scheduled on weekdays. */
+export function liloDefaultStatus(dateISO) {
+  const d = new Date(dateISO + 'T00:00:00');
+  const day = d.getDay();
+  return day === 0 || day === 6 ? 'Rest Day' : 'Scheduled';
+}

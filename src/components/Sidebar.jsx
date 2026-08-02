@@ -4,6 +4,7 @@ import {
   CalendarClock,
   CheckCheck,
   LayoutDashboard,
+  ClipboardList,
   Plus,
   MoreHorizontal,
 } from 'lucide-react';
@@ -14,6 +15,7 @@ const NAV = [
   { id: 'upcoming', label: 'Upcoming', icon: CalendarClock },
   { id: 'completed', label: 'Completed', icon: CheckCheck },
   { id: 'dashboards', label: 'Dashboards', icon: LayoutDashboard },
+  { id: 'lilo', label: 'LILO Tracker', icon: ClipboardList },
 ];
 
 export default function Sidebar({

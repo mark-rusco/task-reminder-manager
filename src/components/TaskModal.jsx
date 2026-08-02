@@ -40,6 +40,7 @@ export default function TaskModal({
   const [timePickerOpen, setTimePickerOpen] = useState(false);
   const titleRef = useRef(null);
   const fileRef = useRef(null);
+  const prevTimeRef = useRef('');
   const editing = !!initial;
 
   useEffect(() => {
@@ -121,6 +122,18 @@ export default function TaskModal({
   };
 
   const linkedDashboard = dashboards.find((d) => d.id === form.dashboardId);
+
+  const openTimePicker = () => {
+    prevTimeRef.current = form.dueTime;
+    setTimePickerOpen(true);
+  };
+
+  const cancelTime = () => {
+    set({ dueTime: prevTimeRef.current });
+    setTimePickerOpen(false);
+  };
+
+  const confirmTime = () => setTimePickerOpen(false);
 
   const formatTime12 = (t) => {
     if (!t) return '';
@@ -208,8 +221,7 @@ export default function TaskModal({
                 <button
                   type="button"
                   className={`input time-field-btn ${form.dueTime ? 'has-value' : ''} ${timePickerOpen ? 'open' : ''}`}
-                  onClick={() => setTimePickerOpen((v) => !v)}
-                  aria-expanded={timePickerOpen}
+                  onClick={openTimePicker}
                   aria-haspopup="dialog"
                 >
                   <span className="time-field-label">{form.dueTime ? formatTime12(form.dueTime) : 'Set a time'}</span>
@@ -229,12 +241,6 @@ export default function TaskModal({
                   <ChevronDown size={15} className={`time-field-chevron ${timePickerOpen ? 'rotated' : ''}`} />
                 </button>
               </div>
-
-              {timePickerOpen && (
-                <div className="time-picker-wrap">
-                  <TimePicker value={form.dueTime} onChange={(v) => set({ dueTime: v })} />
-                </div>
-              )}
             </div>
 
             {isMeeting && (
@@ -399,6 +405,17 @@ export default function TaskModal({
                 </button>
               </div>
             </div>
+          </div>
+        )}
+
+        {timePickerOpen && (
+          <div className="time-popover-overlay" onMouseDown={(e) => e.target === e.currentTarget && cancelTime()}>
+            <TimePicker
+              value={form.dueTime}
+              onChange={(v) => set({ dueTime: v })}
+              onCancel={cancelTime}
+              onConfirm={confirmTime}
+            />
           </div>
         )}
       </div>
