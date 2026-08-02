@@ -112,12 +112,23 @@ export function useTasks() {
   const userId = session?.user?.id || null;
   const backend = !!supabase && !!userId;
 
-  const [tasks, setTasks] = useState(() => loadState(TASKS_KEY, null));
-  const [labels, setLabels] = useState(() => loadState(LABELS_KEY, DEFAULT_LABELS));
-  const [snoozed, setSnoozed] = useState(() => loadState(SNOOZE_KEY, []));
+  // Local mode seeds/loads from localStorage here (in the initializer) so it is
+  // stable across StrictMode double-mounts in dev. Backend mode loads below.
+  const [tasks, setTasks] = useState(() => {
+    const existing = loadState(TASKS_KEY, null);
+    if (existing == null) {
+      const seeded = seedTasks();
+      saveState(TASKS_KEY, seeded);
+      return seeded;
+    }
+    return existing || [];
+  });
+  const [labels, setLabels] = useState(() => loadState(LABELS_KEY, DEFAULT_LABELS) || []);
+  const [snoozed, setSnoozed] = useState(() => loadState(SNOOZE_KEY, []) || []);
   const [toasts, setToasts] = useState([]);
   const [syncing, setSyncing] = useState(false);
   const toastSeq = useRef(0);
+  const didSeedRef = useRef(false);
 
   const pushToast = useCallback((message, type = 'info', action = null) => {
     const id = ++toastSeq.current;
@@ -133,21 +144,11 @@ export function useTasks() {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  // Initial load: from Supabase when authed, otherwise from localStorage.
+  // Initial load: from Supabase when authed, otherwise localStorage (already seeded above).
   useEffect(() => {
     let active = true;
-    const loadLocal = () => {
-      if (loadState(TASKS_KEY, null) == null) {
-        const seeded = seedTasks();
-        saveState(TASKS_KEY, seeded);
-        if (active) setTasks(seeded);
-      } else if (active) {
-        setTasks(loadState(TASKS_KEY, null));
-      }
-    };
 
     if (!backend) {
-      loadLocal();
       if (active) setSyncing(false);
       return;
     }
@@ -167,8 +168,9 @@ export function useTasks() {
       const dbTasks = (t || []).map(fromRow);
       const dbLabels = l || [];
 
-      if (dbTasks.length === 0 && dbLabels.length === 0) {
-        // First login for this user — seed the demo tasks into the DB.
+      if (dbTasks.length === 0 && !didSeedRef.current) {
+        // First login for this user — seed the demo tasks and default categories.
+        didSeedRef.current = true;
         const seeded = seedTasks();
         const { error: ie } = await supabase
           .from('tasks')
@@ -179,10 +181,17 @@ export function useTasks() {
         } else {
           setTasks(seeded);
         }
+        if (dbLabels.length === 0) {
+          const { error: le2 } = await supabase
+            .from('labels')
+            .insert(DEFAULT_LABELS.map((lb) => ({ id: lb.id, user_id: userId, name: lb.name, color: lb.color })));
+          if (!active) return;
+          if (!le2) setLabels(DEFAULT_LABELS);
+        }
       } else {
         setTasks(dbTasks);
       }
-      setLabels(dbLabels);
+      setLabels(dbLabels.length ? dbLabels : labelsRef.current);
       setSyncing(false);
     })();
 

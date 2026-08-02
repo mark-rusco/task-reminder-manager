@@ -4,7 +4,7 @@ export function filterTasks(tasks, view) {
   const labelId = view.labelId;
   const search = (view.search || '').trim().toLowerCase();
 
-  let list = tasks;
+  let list = Array.isArray(tasks) ? tasks : [];
   if (labelId) list = list.filter((t) => (t.labels || []).includes(labelId));
   if (search) {
     list = list.filter(
