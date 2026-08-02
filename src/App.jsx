@@ -356,6 +356,7 @@ export default function App() {
                 onToggle={toggleComplete}
                 onEdit={openEditTask}
                 onDelete={deleteTask}
+                onOpenDashboard={openDashboard}
               />
 
               {view.type === 'completed' && counts.completed > 0 && (

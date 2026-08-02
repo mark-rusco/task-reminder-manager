@@ -3,7 +3,7 @@ import { priorityMeta } from '../utils/constants';
 import { hasRecurrence, describeRecurrence } from '../utils/recurrence';
 import { Repeat2, Bell, Flag, Pencil, Trash2, Users, Link2, Image as ImageIcon, RefreshCw } from 'lucide-react';
 
-export default function TaskItem({ task, labels, dashboards, now, onToggle, onEdit, onDelete }) {
+export default function TaskItem({ task, labels, dashboards, now, onToggle, onEdit, onDelete, onOpenDashboard }) {
   const bucket = timeBucket(task, now);
   const overdue = isOverdue(task, now);
   const prio = priorityMeta(task.priority);
@@ -72,10 +72,24 @@ export default function TaskItem({ task, labels, dashboards, now, onToggle, onEd
                 </span>
               )}
               {linkedDashboards.map((d) => (
-                <span className="chip chip-dash" key={d.id} title={`Linked to ${d.name}`}>
+                <a
+                  key={d.id}
+                  className="chip chip-dash"
+                  href={d.url || undefined}
+                  target={d.url ? '_blank' : undefined}
+                  rel="noreferrer"
+                  title={d.url ? `Open ${d.name}` : `Open ${d.name} in Dashboards`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!d.url) {
+                      e.preventDefault();
+                      onOpenDashboard && onOpenDashboard(d.id);
+                    }
+                  }}
+                >
                   <Link2 size={11} />
                   {d.name}
-                </span>
+                </a>
               ))}
               {task.screenshot && (
                 <span className="chip chip-shot" title="Screenshot attached">

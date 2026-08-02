@@ -718,6 +718,7 @@ kbd {
   border: 1px solid var(--border);
   padding: 2px 9px;
   border-radius: 999px;
+  text-decoration: none;
 }
 
 .chip-dot {
@@ -2406,6 +2407,12 @@ textarea.input {
   color: #8b5cf6;
   background: rgba(139, 92, 246, 0.12);
   border-color: transparent;
+  cursor: pointer;
+}
+
+.chip-dash:hover {
+  background: rgba(139, 92, 246, 0.22);
+  color: #8b5cf6;
 }
 
 .chip-shot {
