@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { X, Trash2, Calendar, Flag, Users, Briefcase, Upload, ExternalLink, Loader2 } from 'lucide-react';
+import { X, Trash2, Calendar, Flag, Users, Briefcase, Upload, ExternalLink, Loader2, ChevronDown } from 'lucide-react';
 import { PRIORITIES, priorityMeta, TASK_TYPES } from '../utils/constants';
 import RecurrenceEditor from './RecurrenceEditor.jsx';
 import ReminderEditor from './ReminderEditor.jsx';
@@ -37,6 +37,7 @@ export default function TaskModal({
   const [form, setForm] = useState(EMPTY_FORM);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [timePickerOpen, setTimePickerOpen] = useState(false);
   const titleRef = useRef(null);
   const fileRef = useRef(null);
   const editing = !!initial;
@@ -45,6 +46,7 @@ export default function TaskModal({
     if (open) {
       setConfirmDelete(false);
       setUploading(false);
+      setTimePickerOpen(false);
       if (initial) {
         setForm({
           title: initial.title || '',
@@ -120,6 +122,15 @@ export default function TaskModal({
 
   const linkedDashboard = dashboards.find((d) => d.id === form.dashboardId);
 
+  const formatTime12 = (t) => {
+    if (!t) return '';
+    const [h, m] = t.split(':').map(Number);
+    if (Number.isNaN(h) || Number.isNaN(m)) return t;
+    const ap = h < 12 ? 'AM' : 'PM';
+    const h12 = h % 12 === 0 ? 12 : h % 12;
+    return `${h12}:${String(m).padStart(2, '0')} ${ap}`;
+  };
+
   const quickDates = [
     { label: 'Today', value: todayStr() },
     { label: 'Tomorrow', value: new Date(Date.now() + 86400000).toISOString().slice(0, 10) },
@@ -193,7 +204,37 @@ export default function TaskModal({
                   />
                 </div>
               </div>
-              <TimePicker value={form.dueTime} onChange={(v) => set({ dueTime: v })} />
+              <div className="time-field-row">
+                <button
+                  type="button"
+                  className={`input time-field-btn ${form.dueTime ? 'has-value' : ''} ${timePickerOpen ? 'open' : ''}`}
+                  onClick={() => setTimePickerOpen((v) => !v)}
+                  aria-expanded={timePickerOpen}
+                  aria-haspopup="dialog"
+                >
+                  <span className="time-field-label">{form.dueTime ? formatTime12(form.dueTime) : 'Set a time'}</span>
+                  {form.dueTime && (
+                    <span
+                      className="time-field-clear"
+                      role="button"
+                      aria-label="Clear time"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        set({ dueTime: '' });
+                      }}
+                    >
+                      <X size={13} />
+                    </span>
+                  )}
+                  <ChevronDown size={15} className={`time-field-chevron ${timePickerOpen ? 'rotated' : ''}`} />
+                </button>
+              </div>
+
+              {timePickerOpen && (
+                <div className="time-picker-wrap">
+                  <TimePicker value={form.dueTime} onChange={(v) => set({ dueTime: v })} />
+                </div>
+              )}
             </div>
 
             {isMeeting && (
