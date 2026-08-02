@@ -18,7 +18,9 @@ export default function DashboardsView({
   const linkedCount = useMemo(() => {
     const map = {};
     for (const t of tasks) {
-      if (t.dashboardId) map[t.dashboardId] = (map[t.dashboardId] || 0) + 1;
+      (t.dashboardIds || []).forEach((id) => {
+        if (id) map[id] = (map[id] || 0) + 1;
+      });
     }
     return map;
   }, [tasks]);

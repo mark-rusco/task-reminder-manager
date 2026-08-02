@@ -5,13 +5,17 @@ export default function ReminderEditor({ reminder, onChange }) {
 
   return (
     <div className="form-section">
-      <label className="form-label">
+      <label className="toggle-row">
         <input
           type="checkbox"
+          className="toggle-check"
           checked={reminder.enabled}
           onChange={(e) => set({ enabled: e.target.checked })}
         />
-        Remind me
+        <span>
+          <strong>Remind me</strong>
+          <small>Get a nudge before this task is due</small>
+        </span>
       </label>
 
       {reminder.enabled && (

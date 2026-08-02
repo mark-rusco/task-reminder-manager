@@ -7,6 +7,7 @@ import {
   ClipboardList,
   Plus,
   MoreHorizontal,
+  ExternalLink,
 } from 'lucide-react';
 
 const NAV = [
@@ -27,7 +28,9 @@ export default function Sidebar({
   onNewTask,
   onManageLabels,
   counts,
+  dashboards,
 }) {
+  const quickLinks = (dashboards || []).filter((d) => d.url && d.url.trim()).sort((a, b) => a.name.localeCompare(b.name));
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
@@ -60,6 +63,29 @@ export default function Sidebar({
             </button>
           );
         })}
+      </nav>
+
+      <div className="sidebar-section-head">
+        <span>Quick links</span>
+      </div>
+      <nav className="sidebar-nav quick-nav">
+        {quickLinks.length === 0 ? (
+          <p className="sidebar-empty">Pin a dashboard from Dashboards to jump straight to it.</p>
+        ) : (
+          quickLinks.map((d) => (
+            <a
+              key={d.id}
+              className="nav-item"
+              href={d.url}
+              target="_blank"
+              rel="noreferrer"
+              title={`Open ${d.name}`}
+            >
+              <ExternalLink size={16} strokeWidth={1.8} />
+              <span className="nav-label">{d.name}</span>
+            </a>
+          ))
+        )}
       </nav>
 
       <div className="sidebar-section-head">

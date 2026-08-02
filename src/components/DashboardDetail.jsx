@@ -18,7 +18,7 @@ export default function DashboardDetail({
   const linked = useMemo(
     () =>
       (tasks || [])
-        .filter((t) => t.dashboardId === dashboard.id)
+        .filter((t) => (t.dashboardIds || []).includes(dashboard.id))
         .sort((a, b) => (a.completed ? 1 : 0) - (b.completed ? 1 : 0) || (a.createdAt < b.createdAt ? -1 : 1)),
     [tasks, dashboard.id],
   );
@@ -92,7 +92,7 @@ export default function DashboardDetail({
                   key={s.value}
                   type="button"
                   className={`chip chip-btn ${on ? 'on' : ''}`}
-                  style={on ? { borderColor: s.color, color: s.color, background: 'transparent' } : undefined}
+                  style={on ? { borderColor: s.color, color: s.color, background: `${s.color}1f` } : undefined}
                   onClick={() => onUpdateStatus(dashboard.id, s.value)}
                 >
                   <span className="chip-dot" style={{ background: s.color }} />

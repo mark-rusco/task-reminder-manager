@@ -265,6 +265,7 @@ export default function App() {
         activeLabel={view.labelId}
         labels={labels}
         counts={counts}
+        dashboards={dashboards}
         onNavigate={navigate}
         onSelectLabel={(id) => navigate('label', id)}
         onNewTask={() => openNewTask(defaultDateForView)}
@@ -309,7 +310,7 @@ export default function App() {
 
         {!activeView.search && view.type === 'today' && <StatsBar stats={stats} />}
 
-        <div className="content">
+        <div className={`content ${view.type === 'dashboards' || view.type === 'lilo' ? 'content-wide' : ''}`}>
           {view.type === 'lilo' ? (
             <LiloView
               entries={liloEntries}
@@ -393,7 +394,6 @@ export default function App() {
         onClose={() => setModal((m) => ({ ...m, open: false }))}
         onSave={saveTask}
         onDelete={removeTask}
-        onOpenDashboard={openDashboard}
       />
 
       <DashboardModal

@@ -253,6 +253,11 @@ textarea {
   overflow-y: auto;
 }
 
+.quick-nav {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
 .label-dot {
   width: 10px;
   height: 10px;
@@ -512,6 +517,10 @@ kbd {
   width: 100%;
   max-width: 880px;
   margin: 0 auto;
+}
+
+.content-wide {
+  max-width: 1280px;
 }
 
 .task-group {
@@ -1012,6 +1021,35 @@ textarea.input {
   color: var(--text-3);
 }
 
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.toggle-row .toggle-check {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+  flex-shrink: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.toggle-row strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.toggle-row small {
+  color: var(--text-3);
+  font-size: 12px;
+}
+
 .form-due-preview {
   display: flex;
   align-items: center;
@@ -1345,13 +1383,14 @@ textarea.input {
   }
   .search-box {
     width: 100%;
-    flex: 1;
+    flex: 1 1 100%;
   }
   .search-box:focus-within {
     width: 100%;
   }
   .header-actions {
     width: 100%;
+    flex-wrap: wrap;
   }
   .app-header {
     align-items: stretch;
@@ -2042,14 +2081,16 @@ textarea.input {
 
 .task-type-seg {
   margin-bottom: 14px;
+  flex-wrap: wrap;
 }
 
 .task-type-seg button {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  flex: 1;
+  flex: 1 1 auto;
   justify-content: center;
+  min-width: 96px;
 }
 
 .meeting-section {
@@ -2097,6 +2138,22 @@ textarea.input {
 
 .link-dashboard-row .input {
   flex: 1;
+}
+
+.dashboard-picker {
+  min-height: 92px;
+  padding: 6px;
+}
+
+.dashboard-picker option {
+  padding: 7px 10px;
+  border-radius: 6px;
+}
+
+.dashboard-picker option:checked {
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-weight: 600;
 }
 
 /* ---------- Material time picker dialog ---------- */
@@ -2282,10 +2339,6 @@ textarea.input {
 
 /* ---------- Collapsible time field ---------- */
 
-.time-field-row {
-  margin-bottom: 12px;
-}
-
 .time-field-btn {
   display: flex;
   align-items: center;
@@ -2358,6 +2411,12 @@ textarea.input {
 .chip-shot {
   color: var(--success);
   background: var(--success-soft);
+  border-color: transparent;
+}
+
+.chip-refresh {
+  color: #0ea5e9;
+  background: var(--info-soft);
   border-color: transparent;
 }
 

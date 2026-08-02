@@ -30,6 +30,7 @@ export const REMINDER_PRESETS = [
 export const TASK_TYPES = [
   { value: 'task', label: 'Task' },
   { value: 'meeting', label: 'Meeting' },
+  { value: 'refresh', label: 'Refresh' },
 ];
 
 export const DASHBOARD_STATUSES = [

@@ -49,7 +49,24 @@ function seedTasks() {
       taskType: 'meeting',
       meetingNotes: 'Quick status sync. Key points: delivery is on track, sign-off expected Friday.',
       screenshot: null,
-      dashboardId: DEMO_DASHBOARD_ID,
+      dashboardIds: [DEMO_DASHBOARD_ID],
+    },
+    {
+      id: uid(),
+      title: 'Refresh Sales Power BI dashboard',
+      notes: 'Refresh the dataset and confirm the dashboard updated with today’s numbers.',
+      dueDate: now,
+      dueTime: '16:00',
+      priority: 'high',
+      labels: ['lbl-work'],
+      recurrence: { freq: 'weekdays', interval: 1, weekdays: [], endDate: null },
+      reminder: { enabled: false, minutes: 0, notifiedAt: null },
+      completed: false,
+      createdAt: new Date().toISOString(),
+      taskType: 'refresh',
+      meetingNotes: '',
+      screenshot: null,
+      dashboardIds: [DEMO_DASHBOARD_ID],
     },
     {
       id: uid(),
@@ -99,6 +116,7 @@ const toRow = (t, userId) => ({
   meeting_notes: t.meetingNotes || null,
   screenshot: t.screenshot || null,
   dashboard_id: t.dashboardId || null,
+  dashboard_ids: t.dashboardIds || [],
 });
 
 const fromRow = (r) => ({
@@ -117,7 +135,7 @@ const fromRow = (r) => ({
   taskType: r.task_type || 'task',
   meetingNotes: r.meeting_notes || '',
   screenshot: r.screenshot || null,
-  dashboardId: r.dashboard_id || null,
+  dashboardIds: Array.isArray(r.dashboard_ids) ? r.dashboard_ids : r.dashboard_id ? [r.dashboard_id] : [],
 });
 
 export function useTasks() {
@@ -267,7 +285,7 @@ export function useTasks() {
         taskType: 'task',
         meetingNotes: '',
         screenshot: null,
-        dashboardId: null,
+        dashboardIds: [],
         ...data,
       };
       setTasks((prev) => [task, ...prev]);

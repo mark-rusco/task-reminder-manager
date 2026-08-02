@@ -1,7 +1,7 @@
 import { timeBucket, formatDueDate, isOverdue } from '../utils/dates';
 import { priorityMeta } from '../utils/constants';
 import { hasRecurrence, describeRecurrence } from '../utils/recurrence';
-import { Repeat2, Bell, Flag, Pencil, Trash2, Users, Link2, Image as ImageIcon } from 'lucide-react';
+import { Repeat2, Bell, Flag, Pencil, Trash2, Users, Link2, Image as ImageIcon, RefreshCw } from 'lucide-react';
 
 export default function TaskItem({ task, labels, dashboards, now, onToggle, onEdit, onDelete }) {
   const bucket = timeBucket(task, now);
@@ -11,7 +11,8 @@ export default function TaskItem({ task, labels, dashboards, now, onToggle, onEd
   const recurring = hasRecurrence(task.recurrence);
   const hasReminder = task.reminder?.enabled;
   const isMeeting = task.taskType === 'meeting';
-  const linkedDashboard = dashboards.find((d) => d.id === task.dashboardId);
+  const isRefresh = task.taskType === 'refresh';
+  const linkedDashboards = (task.dashboardIds || []).map((id) => dashboards.find((d) => d.id === id)).filter(Boolean);
 
   const dueClass =
     task.completed ? 'due-done' : overdue ? 'due-overdue' : bucket === 'today' ? 'due-today' : '';
@@ -31,7 +32,18 @@ export default function TaskItem({ task, labels, dashboards, now, onToggle, onEd
           </svg>
         </button>
 
-        <div className="task-body" onClick={() => onEdit(task)} role="button" tabIndex={0}>
+        <div
+          className="task-body"
+          onClick={() => onEdit(task)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onEdit(task);
+            }
+          }}
+        >
           <div className="task-title-row">
             {isMeeting && (
               <span className="chip chip-meeting" title="Meeting">
@@ -45,20 +57,26 @@ export default function TaskItem({ task, labels, dashboards, now, onToggle, onEd
             <span className="task-title">{task.title}</span>
           </div>
 
-          {(task.notes || taskLabels.length || task.dueDate || recurring || hasReminder || linkedDashboard || task.meetingNotes || task.screenshot) && (
+          {(task.notes || taskLabels.length || task.dueDate || recurring || hasReminder || linkedDashboards.length || isRefresh || task.meetingNotes || task.screenshot) && (
             <div className="task-meta">
+              {isRefresh && (
+                <span className="chip chip-refresh" title="Refresh task">
+                  <RefreshCw size={11} />
+                  Refresh
+                </span>
+              )}
               {task.dueDate && (
                 <span className={`task-due ${dueClass}`}>
                   {formatDueDate(task.dueDate)}
                   {task.dueTime ? ` · ${task.dueTime}` : ''}
                 </span>
               )}
-              {linkedDashboard && (
-                <span className="chip chip-dash" title={`Linked to ${linkedDashboard.name}`}>
+              {linkedDashboards.map((d) => (
+                <span className="chip chip-dash" key={d.id} title={`Linked to ${d.name}`}>
                   <Link2 size={11} />
-                  {linkedDashboard.name}
+                  {d.name}
                 </span>
-              )}
+              ))}
               {task.screenshot && (
                 <span className="chip chip-shot" title="Screenshot attached">
                   <ImageIcon size={11} />

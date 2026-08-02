@@ -128,7 +128,7 @@ export default function DashboardModal({ open, initial, onClose, onSave, onDelet
                       key={s.value}
                       type="button"
                       className={`chip chip-btn ${on ? 'on' : ''}`}
-                      style={on ? { borderColor: s.color, color: s.color, background: 'transparent' } : undefined}
+                      style={on ? { borderColor: s.color, color: s.color, background: `${s.color}1f` } : undefined}
                       onClick={() => set({ status: s.value })}
                     >
                       <span className="chip-dot" style={{ background: s.color }} />

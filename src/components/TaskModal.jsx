@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { X, Trash2, Calendar, Flag, Users, Briefcase, Upload, ExternalLink, Loader2, ChevronDown } from 'lucide-react';
+import { X, Trash2, Calendar, Flag, Users, Briefcase, Upload, Loader2, ChevronDown, RefreshCw, Link2 } from 'lucide-react';
 import { PRIORITIES, priorityMeta, TASK_TYPES } from '../utils/constants';
 import RecurrenceEditor from './RecurrenceEditor.jsx';
 import ReminderEditor from './ReminderEditor.jsx';
@@ -20,7 +20,13 @@ const EMPTY_FORM = {
   taskType: 'task',
   meetingNotes: '',
   screenshot: null,
-  dashboardId: null,
+  dashboardIds: [],
+};
+
+const TYPE_ICON = {
+  task: Briefcase,
+  meeting: Users,
+  refresh: RefreshCw,
 };
 
 export default function TaskModal({
@@ -32,7 +38,6 @@ export default function TaskModal({
   onClose,
   onSave,
   onDelete,
-  onOpenDashboard,
 }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -65,7 +70,7 @@ export default function TaskModal({
           taskType: initial.taskType || 'task',
           meetingNotes: initial.meetingNotes || '',
           screenshot: initial.screenshot || null,
-          dashboardId: initial.dashboardId || null,
+          dashboardIds: initial.dashboardIds || [],
         });
       } else {
         setForm({ ...EMPTY_FORM, dueDate: defaultDate || todayStr() });
@@ -78,6 +83,7 @@ export default function TaskModal({
 
   const set = (patch) => setForm((f) => ({ ...f, ...patch }));
   const isMeeting = form.taskType === 'meeting';
+  const isRefresh = form.taskType === 'refresh';
 
   const toggleLabel = (id) => {
     set({ labels: form.labels.includes(id) ? form.labels.filter((l) => l !== id) : [...form.labels, id] });
@@ -102,7 +108,7 @@ export default function TaskModal({
       taskType: form.taskType,
       meetingNotes: form.meetingNotes.trim(),
       screenshot: form.screenshot,
-      dashboardId: form.dashboardId || null,
+      dashboardIds: form.dashboardIds || [],
     });
   };
 
@@ -121,7 +127,35 @@ export default function TaskModal({
     }
   };
 
-  const linkedDashboard = dashboards.find((d) => d.id === form.dashboardId);
+  const dashboardPicker = (
+    <div className="form-section">
+      <label className="form-label">
+        <Link2 size={13} /> Link reports / dashboards
+      </label>
+      {dashboards.length === 0 ? (
+        <p className="form-hint">No dashboards yet — add them from the Dashboards view.</p>
+      ) : (
+        <>
+          <select
+            multiple
+            size={Math.min(dashboards.length, 4) || 4}
+            className="input dashboard-picker"
+            value={form.dashboardIds}
+            onChange={(e) => set({ dashboardIds: Array.from(e.target.selectedOptions).map((o) => o.value) })}
+            aria-label="Link reports or dashboards"
+          >
+            {dashboards.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.name}
+                {d.workspace ? ` — ${d.workspace}` : ''}
+              </option>
+            ))}
+          </select>
+          <p className="form-hint">Ctrl&#47;Cmd-click to select multiple reports or dashboards.</p>
+        </>
+      )}
+    </div>
+  );
 
   const openTimePicker = () => {
     prevTimeRef.current = form.dueTime;
@@ -162,23 +196,32 @@ export default function TaskModal({
         <form onSubmit={submit}>
           <div className="modal-body">
             <div className="seg task-type-seg" role="group" aria-label="Task type">
-              {TASK_TYPES.map((t) => (
-                <button
-                  key={t.value}
-                  type="button"
-                  className={form.taskType === t.value ? 'on' : ''}
-                  onClick={() => set({ taskType: t.value })}
-                >
-                  {t.value === 'meeting' ? <Users size={14} /> : <Briefcase size={14} />}
-                  {t.label}
-                </button>
-              ))}
+              {TASK_TYPES.map((t) => {
+                const Icon = TYPE_ICON[t.value] || Briefcase;
+                return (
+                  <button
+                    key={t.value}
+                    type="button"
+                    className={form.taskType === t.value ? 'on' : ''}
+                    onClick={() => set({ taskType: t.value })}
+                  >
+                    <Icon size={14} />
+                    {t.label}
+                  </button>
+                );
+              })}
             </div>
 
             <input
               ref={titleRef}
               className="input input-title"
-              placeholder={isMeeting ? 'Meeting title — e.g. Stakeholder sync' : 'What needs to be done?'}
+              placeholder={
+                isMeeting
+                  ? 'Meeting title — e.g. Stakeholder sync'
+                  : isRefresh
+                    ? 'Report or dashboard to refresh — e.g. Sales Power BI'
+                    : 'What needs to be done?'
+              }
               value={form.title}
               onChange={(e) => set({ title: e.target.value })}
               required
@@ -187,10 +230,12 @@ export default function TaskModal({
             <textarea
               className="input"
               rows={2}
-              placeholder={isMeeting ? 'Agenda (optional)' : 'Add notes (optional)'}
+              placeholder={isMeeting ? 'Agenda (optional)' : isRefresh ? 'What needs refreshing? (optional)' : 'Add notes (optional)'}
               value={form.notes}
               onChange={(e) => set({ notes: e.target.value })}
             />
+
+            {isRefresh && dashboardPicker}
 
             <div className="form-section">
               <label className="form-label">Due date & time</label>
@@ -216,8 +261,6 @@ export default function TaskModal({
                     onChange={(e) => set({ dueDate: e.target.value })}
                   />
                 </div>
-              </div>
-              <div className="time-field-row">
                 <button
                   type="button"
                   className={`input time-field-btn ${form.dueTime ? 'has-value' : ''} ${timePickerOpen ? 'open' : ''}`}
@@ -271,36 +314,7 @@ export default function TaskModal({
                     </div>
                   )}
                 </div>
-
-                <label className="form-label">Link to dashboard</label>
-                <div className="link-dashboard-row">
-                  <select
-                    className="input"
-                    value={form.dashboardId || ''}
-                    onChange={(e) => set({ dashboardId: e.target.value || null })}
-                    aria-label="Link to dashboard"
-                  >
-                    <option value="">No dashboard</option>
-                    {dashboards.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name}
-                      </option>
-                    ))}
-                  </select>
-                  {linkedDashboard && (
-                    <button
-                      type="button"
-                      className="btn btn-ghost"
-                      onClick={() => onOpenDashboard && onOpenDashboard(linkedDashboard.id)}
-                      title="Open dashboard"
-                    >
-                      <ExternalLink size={14} /> Open
-                    </button>
-                  )}
-                </div>
-                {linkedDashboard && (
-                  <p className="form-hint">Recap this meeting from “{linkedDashboard.name}” in the Dashboards view.</p>
-                )}
+                {dashboardPicker}
               </div>
             )}
 
@@ -378,7 +392,7 @@ export default function TaskModal({
                 Cancel
               </button>
               <button type="submit" className="btn btn-primary">
-                {editing ? 'Save changes' : isMeeting ? 'Add meeting' : 'Add task'}
+                {editing ? 'Save changes' : isMeeting ? 'Add meeting' : isRefresh ? 'Add refresh' : 'Add task'}
               </button>
             </div>
           </div>
@@ -387,7 +401,7 @@ export default function TaskModal({
         {confirmDelete && (
           <div className="confirm-overlay">
             <div className="confirm-box">
-              <h3>Delete this {isMeeting ? 'meeting' : 'task'}?</h3>
+              <h3>Delete this {isMeeting ? 'meeting' : isRefresh ? 'refresh' : 'task'}?</h3>
               <p>Notes and screenshots will be removed too.</p>
               <div className="confirm-actions">
                 <button type="button" className="btn" onClick={() => setConfirmDelete(false)}>
