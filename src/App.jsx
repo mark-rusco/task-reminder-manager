@@ -57,7 +57,7 @@ export default function App() {
     removeEntry,
     resetMonth,
     setSubmitted,
-  } = useLilo();
+  } = useLilo(pushToast);
 
   const [view, setView] = useState({ type: 'inbox', labelId: null });
   const [search, setSearch] = useState('');
