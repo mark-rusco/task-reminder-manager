@@ -180,7 +180,7 @@ export function useTasks() {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  // Initial load: from Supabase when authed, otherwise localStorage (already seeded above).
+  // Initial load from backend when authed, otherwise localStorage (already seeded above).
   useEffect(() => {
     let active = true;
 
@@ -202,10 +202,20 @@ export function useTasks() {
       if (le) pushToast('Could not load categories: ' + le.message, 'warning');
 
       const dbTasks = (t || []).map(fromRow);
-      const dbLabels = l || [];
+      const hasLocal = (tasksRef.current && tasksRef.current.length > 0) || false;
 
-      if (dbTasks.length === 0 && !didSeedRef.current) {
-        // First login for this user — seed the demo tasks and default categories.
+      if (te) {
+        // Read failed — keep whatever we have locally and stay put.
+        if (active) {
+          setLabels(dbLabels.length ? dbLabels : labelsRef.current);
+          setSyncing(false);
+        }
+        return;
+      }
+
+      // Seed demo data only for a brand-new user who has nothing locally either.
+      // Never clobber an existing local cache with an (apparently) empty backend.
+      if (dbTasks.length === 0 && !didSeedRef.current && !hasLocal) {
         didSeedRef.current = true;
         const seeded = seedTasks();
         const { error: ie } = await supabase
@@ -224,11 +234,18 @@ export function useTasks() {
           if (!active) return;
           if (!le2) setLabels(DEFAULT_LABELS);
         }
-      } else {
+      } else if (dbTasks.length > 0) {
+        // Backend is the source of truth. Do NOT merge localStorage-only tasks
+        // back in — a task deleted from the DB would otherwise be resurrected
+        // from the local cache on every refresh.
         setTasks(dbTasks);
+      } else {
+        // Backend empty but the user has local tasks (writes may not have
+        // persisted). Keep the local list so nothing is lost.
+        if (active) setTasks((prev) => prev);
       }
       setLabels(dbLabels.length ? dbLabels : labelsRef.current);
-      setSyncing(false);
+      if (active) setSyncing(false);
     })();
 
     return () => {
@@ -243,8 +260,8 @@ export function useTasks() {
     const refetch = async () => {
       const { data: t } = await supabase.from('tasks').select('*').order('created_at', { ascending: false });
       const { data: l } = await supabase.from('labels').select('*').order('created_at', { ascending: true });
-      if (t) setTasks(t.map(fromRow));
-      if (l) setLabels(l);
+      if (t && t.length) setTasks(t.map(fromRow));
+      if (l && l.length) setLabels(l);
     };
     const channel = supabase
       .channel('focusly-sync')
@@ -263,21 +280,25 @@ export function useTasks() {
   useEffect(() => setSetting('snoozed', snoozed), [snoozed, setSetting]);
 
   const persistTask = useCallback(
-    (task) => {
+    async (task) => {
       if (!backend) return Promise.resolve();
-      return supabase.from('tasks').upsert(toRow(task, userId));
+      const { error } = await supabase.from('tasks').upsert(toRow(task, userId));
+      if (error) pushToast(`Couldn't save task to Supabase: ${error.message}`, 'warning');
+      return { error };
     },
-    [backend, userId],
+    [backend, userId, pushToast],
   );
 
   const persistLabel = useCallback(
-    (label) => {
+    async (label) => {
       if (!backend) return Promise.resolve();
-      return supabase
+      const { error } = await supabase
         .from('labels')
         .upsert({ id: label.id, user_id: userId, name: label.name, color: label.color });
+      if (error) pushToast(`Couldn't save category to Supabase: ${error.message}`, 'warning');
+      return { error };
     },
-    [backend, userId],
+    [backend, userId, pushToast],
   );
 
   const addTask = useCallback(
@@ -316,10 +337,29 @@ export function useTasks() {
   );
 
   const deleteTask = useCallback(
-    (id) => {
+    async (id) => {
       const target = tasksRef.current.find((t) => t.id === id);
       setTasks((prev) => prev.filter((t) => t.id !== id));
-      if (backend) supabase.from('tasks').delete().eq('id', id);
+      if (backend) {
+        const { data, error } = await supabase
+          .from('tasks')
+          .delete()
+          .eq('id', id)
+          .select();
+        if (error) {
+          pushToast(`Couldn't delete task: ${error.message}`, 'warning');
+          setTasks((prev) => (target && !prev.some((t) => t.id === id) ? [target, ...prev] : prev));
+          return;
+        }
+        if (!data || data.length === 0) {
+          // PostgREST returns 204 even when 0 rows matched — the row wasn't
+          // removed (RLS policy may not cover it, or it's not in the DB). Keep
+          // it locally so the UI matches the server instead of silently losing it.
+          pushToast("Couldn't delete task from the server — it may reappear on refresh.", 'warning');
+          setTasks((prev) => (target && !prev.some((t) => t.id === id) ? [target, ...prev] : prev));
+          return;
+        }
+      }
       pushToast('Task deleted', 'info', {
         label: 'Undo',
         fn: () => {
