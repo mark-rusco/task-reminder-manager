@@ -59,6 +59,10 @@ export const DASHBOARDS_KEY = 'dashboards';
 export const SNOOZE_KEY = 'snoozed';
 export const LILO_KEY = 'lilo';
 export const LILO_SUBMISSIONS_KEY = 'lilo-submissions';
+/** Set once a user's tasks have been loaded/uploaded to the backend, so the
+ *  app never re-seeds demo tasks for an established account (which would
+ *  resurrect deleted tasks on refresh). */
+export const ONBOARDED_KEY = 'onboarded';
 
 /** Shared stable UUID used by the demo dashboard + its linked sample meeting. */
 export const DEMO_DASHBOARD_ID = '00000000-0000-4000-8000-000000000001';

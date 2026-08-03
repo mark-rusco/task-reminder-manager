@@ -7,6 +7,7 @@ import {
   DEFAULT_LABELS,
   DEMO_DASHBOARD_ID,
   LABELS_KEY,
+  ONBOARDED_KEY,
   SNOOZE_KEY,
   TASKS_KEY,
   uid,
@@ -164,7 +165,6 @@ export function useTasks() {
   const [toasts, setToasts] = useState([]);
   const [syncing, setSyncing] = useState(false);
   const toastSeq = useRef(0);
-  const didSeedRef = useRef(false);
 
   const pushToast = useCallback((message, type = 'info', action = null) => {
     const id = ++toastSeq.current;
@@ -202,6 +202,7 @@ export function useTasks() {
       if (le) pushToast('Could not load categories: ' + le.message, 'warning');
 
       const dbTasks = (t || []).map(fromRow);
+      const dbLabels = l || [];
       const hasLocal = (tasksRef.current && tasksRef.current.length > 0) || false;
 
       if (te) {
@@ -213,36 +214,41 @@ export function useTasks() {
         return;
       }
 
-      // Seed demo data only for a brand-new user who has nothing locally either.
-      // Never clobber an existing local cache with an (apparently) empty backend.
-      if (dbTasks.length === 0 && !didSeedRef.current && !hasLocal) {
-        didSeedRef.current = true;
-        const seeded = seedTasks();
-        const { error: ie } = await supabase
-          .from('tasks')
-          .insert(seeded.map((s) => toRow(s, userId)));
-        if (!active) return;
-        if (ie) {
-          pushToast('Could not create starter tasks: ' + ie.message, 'warning');
-        } else {
-          setTasks(seeded);
-        }
-        if (dbLabels.length === 0) {
-          const { error: le2 } = await supabase
-            .from('labels')
-            .insert(DEFAULT_LABELS.map((lb) => ({ id: lb.id, user_id: userId, name: lb.name, color: lb.color })));
-          if (!active) return;
-          if (!le2) setLabels(DEFAULT_LABELS);
-        }
-      } else if (dbTasks.length > 0) {
+      if (dbTasks.length > 0) {
         // Backend is the source of truth. Do NOT merge localStorage-only tasks
         // back in — a task deleted from the DB would otherwise be resurrected
         // from the local cache on every refresh.
         setTasks(dbTasks);
+        saveState(ONBOARDED_KEY, true);
+      } else if (hasLocal) {
+        // Backend empty but the user has local tasks (e.g. created while
+        // signed out, or the localStorage seed). Adopt them into the DB so they
+        // sync and can actually be deleted server-side instead of reappearing.
+        const localTasks = tasksRef.current;
+        const { error: ie } = await supabase
+          .from('tasks')
+          .upsert(localTasks.map((s) => toRow(s, userId)));
+        if (!active) return;
+        if (ie) {
+          pushToast('Could not upload your existing tasks: ' + ie.message, 'warning');
+        } else {
+          if (dbLabels.length === 0) {
+            const localLabels = labelsRef.current;
+            const { error: le2 } = await supabase
+              .from('labels')
+              .upsert(localLabels.map((lb) => ({ id: lb.id, user_id: userId, name: lb.name, color: lb.color })));
+            if (!active) return;
+            if (le2) pushToast('Could not upload your categories: ' + le2.message, 'warning');
+          }
+          saveState(ONBOARDED_KEY, true);
+        }
       } else {
-        // Backend empty but the user has local tasks (writes may not have
-        // persisted). Keep the local list so nothing is lost.
-        if (active) setTasks((prev) => prev);
+        // Backend empty and nothing local — either a brand-new account (demo
+        // data already seeded into localStorage below) or an established one
+        // whose tasks were all deleted. Never reseed demo tasks here, or they
+        // would resurrect deleted tasks on every refresh.
+        setTasks([]);
+        saveState(ONBOARDED_KEY, true);
       }
       setLabels(dbLabels.length ? dbLabels : labelsRef.current);
       if (active) setSyncing(false);
