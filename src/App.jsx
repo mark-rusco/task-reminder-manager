@@ -568,6 +568,7 @@ function AppShell() {
         onClose={() => setDashboardModal((m) => ({ ...m, open: false }))}
         onSave={saveDashboard}
         onDelete={removeDashboard}
+        onToast={pushToast}
       />
 
       <LabelManager

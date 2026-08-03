@@ -70,6 +70,7 @@ export const DASHBOARDS_KEY = 'dashboards';
 export const SNOOZE_KEY = 'snoozed';
 export const LILO_KEY = 'lilo';
 export const LILO_SUBMISSIONS_KEY = 'lilo-submissions';
+export const WORKSPACES_KEY = 'workspaces';
 /** Set once a user's tasks have been loaded/uploaded to the backend, so the
  *  app never re-seeds demo tasks for an established account (which would
  *  resurrect deleted tasks on refresh). */

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { X, Trash2 } from 'lucide-react';
+import { X, Trash2, Settings2 } from 'lucide-react';
 import { DASHBOARD_STATUSES } from '../utils/constants';
 import { useDashboardTypes } from '../context/DashboardTypesContext';
+import { useWorkspaces } from '../hooks/useWorkspaces';
 import DashboardTypeIcon from './DashboardTypeIcon.jsx';
 
 const EMPTY = {
@@ -16,12 +17,25 @@ const EMPTY = {
   notes: '',
 };
 
-export default function DashboardModal({ open, initial, onClose, onSave, onDelete }) {
+export default function DashboardModal({ open, initial, onClose, onSave, onDelete, onToast }) {
   const { types } = useDashboardTypes();
+  const { workspaces, addWorkspace, deleteWorkspace } = useWorkspaces(onToast);
   const [form, setForm] = useState(EMPTY);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [wsSuggestions, setWsSuggestions] = useState(false);
+  const [wsManage, setWsManage] = useState(false);
+  const [wsDraft, setWsDraft] = useState('');
   const nameRef = useRef(null);
   const editing = !!initial;
+
+  useEffect(() => {
+    setWsManage(false);
+    setWsSuggestions(false);
+  }, [open]);
+
+  const wsMatches = form.workspace.trim()
+    ? workspaces.filter((w) => w.name.toLowerCase().includes(form.workspace.trim().toLowerCase()))
+    : workspaces;
 
   useEffect(() => {
     if (open) {
@@ -56,11 +70,15 @@ export default function DashboardModal({ open, initial, onClose, onSave, onDelet
       nameRef.current?.focus();
       return;
     }
+    const workspace = form.workspace.trim();
+    if (workspace && !workspaces.some((w) => w.name.toLowerCase() === workspace.toLowerCase())) {
+      addWorkspace(workspace);
+    }
     onSave({
       name,
       description: form.description.trim(),
       url: form.url.trim(),
-      workspace: form.workspace.trim(),
+      workspace,
       status: form.status,
       progress: Number(form.progress),
       dueDate: form.dueDate || null,
@@ -127,13 +145,95 @@ export default function DashboardModal({ open, initial, onClose, onSave, onDelet
 
             <div className="form-grid-2">
               <div className="form-section">
-                <label className="form-label">Workspace</label>
-                <input
-                  className="input"
-                  placeholder="e.g. Finance BI"
-                  value={form.workspace}
-                  onChange={(e) => set({ workspace: e.target.value })}
-                />
+                <div className="form-label-row">
+                  <label className="form-label">Workspace</label>
+                  <button
+                    type="button"
+                    className="icon-btn inline sm"
+                    onClick={() => {
+                      setWsManage((v) => !v);
+                      setWsSuggestions(false);
+                    }}
+                    title={wsManage ? 'Close workspace manager' : 'Manage workspaces'}
+                    aria-label="Manage workspaces"
+                  >
+                    <Settings2 size={15} />
+                  </button>
+                </div>
+                <div className="workspace-combobox">
+                  <input
+                    className="input"
+                    placeholder={workspaces.length ? 'Type or pick a workspace' : 'e.g. Finance BI'}
+                    value={form.workspace}
+                    onChange={(e) => set({ workspace: e.target.value })}
+                    onFocus={() => setWsSuggestions(true)}
+                    onBlur={() => setWsSuggestions(false)}
+                    autoComplete="off"
+                  />
+                  {wsSuggestions && wsMatches.length > 0 && (
+                    <ul className="workspace-suggestions">
+                      {wsMatches.map((w) => (
+                        <li
+                          key={w.id}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            set({ workspace: w.name });
+                          }}
+                        >
+                          {w.name}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                {wsManage && (
+                  <div className="workspace-manage">
+                    <div className="ws-manage-title">Your workspaces</div>
+                    {workspaces.length === 0 && <div className="ws-manage-empty">None yet — add one below.</div>}
+                    <ul className="ws-manage-list">
+                      {workspaces.map((w) => (
+                        <li key={w.id}>
+                          <span className="ws-manage-name">{w.name}</span>
+                          <button
+                            type="button"
+                            className="icon-btn inline sm danger-text"
+                            onClick={() => deleteWorkspace(w.id)}
+                            aria-label={`Delete ${w.name}`}
+                            title="Delete"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="ws-manage-add">
+                      <input
+                        className="input"
+                        placeholder="New workspace"
+                        value={wsDraft}
+                        onChange={(e) => setWsDraft(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            addWorkspace(wsDraft);
+                            setWsDraft('');
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-primary sm"
+                        onClick={() => {
+                          addWorkspace(wsDraft);
+                          setWsDraft('');
+                        }}
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="form-section">
                 <label className="form-label">Due date</label>

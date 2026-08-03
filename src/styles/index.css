@@ -468,6 +468,12 @@ kbd {
   background: var(--primary-soft);
 }
 
+.icon-btn.inline {
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+}
+
 /* ---------- Stats bar ---------- */
 
 .stats-bar {
@@ -1020,6 +1026,107 @@ textarea.input {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-3);
+}
+
+.form-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.workspace-combobox {
+  position: relative;
+}
+
+.workspace-suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  max-height: 180px;
+  overflow: auto;
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-sm);
+}
+
+.workspace-suggestions li {
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.workspace-suggestions li:hover {
+  background: var(--surface-2);
+  color: var(--primary);
+}
+
+.workspace-manage {
+  margin-top: 8px;
+  padding: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ws-manage-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.ws-manage-empty {
+  font-size: 13px;
+  color: var(--text-3);
+}
+
+.ws-manage-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 150px;
+  overflow: auto;
+}
+
+.ws-manage-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 2px;
+}
+
+.ws-manage-name {
+  font-size: 14px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ws-manage-add {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.ws-manage-add .input {
+  flex: 1;
 }
 
 .form-grid-2 {
