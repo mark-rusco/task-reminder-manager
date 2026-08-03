@@ -8,6 +8,8 @@ import { DEFAULT_RECURRENCE } from '../utils/recurrence';
 import { todayStr, formatDueDateTime } from '../utils/dates';
 import { fileToDataUrl } from '../utils/image';
 
+const EMPTY_IDS = [];
+
 const EMPTY_FORM = {
   title: '',
   notes: '',
@@ -35,7 +37,7 @@ export default function TaskModal({
   labels,
   dashboards,
   defaultDate,
-  defaultDashboardIds = [],
+  defaultDashboardIds = EMPTY_IDS,
   defaultType = 'task',
   onClose,
   onSave,

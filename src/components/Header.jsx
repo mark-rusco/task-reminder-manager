@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
-import { Search, Sun, Moon, Bell, BellOff, X, Cloud, CloudOff, LogOut, ChevronDown } from 'lucide-react';
+import { Search, Sun, Moon, Bell, BellOff, X, Cloud, CloudOff } from 'lucide-react';
 import { greeting } from '../utils/dates';
+import UserMenu from './UserMenu.jsx';
 
 export default function Header({
   viewTitle,
@@ -18,28 +18,10 @@ export default function Header({
   syncing,
   backend,
   onSignOut,
+  onOpenProfile,
+  onOpenAdmin,
+  isAdmin,
 }) {
-  const [userOpen, setUserOpen] = useState(false);
-  const userMenuRef = useRef(null);
-
-  useEffect(() => {
-    if (!userOpen) return;
-    const close = (e) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) setUserOpen(false);
-    };
-    document.addEventListener('mousedown', close);
-    return () => document.removeEventListener('mousedown', close);
-  }, [userOpen]);
-
-  const email = user?.email || 'Guest';
-  const initials = email
-    .split('@')[0]
-    .split(/[.\-_]/)
-    .map((p) => p[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase() || 'G';
-
   return (
     <header className="app-header">
       <div className="header-title">
@@ -86,30 +68,14 @@ export default function Header({
           {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
         </button>
 
-        <div className="user-menu" ref={userMenuRef}>
-          <button className="user-chip" onClick={() => setUserOpen((v) => !v)} aria-haspopup="menu" aria-expanded={userOpen}>
-            <span className="avatar">{initials}</span>
-            <span className="user-chip-email">{email}</span>
-            <ChevronDown size={13} className={userOpen ? 'rotated' : ''} />
-          </button>
-          {userOpen && (
-            <div className="user-dropdown" role="menu">
-              <div className="user-drop-head">
-                <span className="avatar">{initials}</span>
-                <div>
-                  <strong>{email}</strong>
-                  <span>{backend ? 'Cloud account' : 'Local session'}</span>
-                </div>
-              </div>
-              {backend && (
-                <button type="button" role="menuitem" onClick={onSignOut}>
-                  <LogOut size={14} />
-                  Sign out
-                </button>
-              )}
-            </div>
-          )}
-        </div>
+        <UserMenu
+          user={user}
+          backend={backend}
+          isAdmin={isAdmin}
+          onOpenProfile={onOpenProfile}
+          onOpenAdmin={onOpenAdmin}
+          onSignOut={onSignOut}
+        />
       </div>
     </header>
   );

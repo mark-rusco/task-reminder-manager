@@ -1,6 +1,7 @@
+import dayjs from 'dayjs';
 import { BUCKET_ORDER, BUCKET_LABELS, timeBucket } from '../utils/dates';
 
-export function filterTasks(tasks, view) {
+export function filterTasks(tasks, view, now = dayjs()) {
   const labelId = view.labelId;
   const search = (view.search || '').trim().toLowerCase();
 
@@ -21,13 +22,13 @@ export function filterTasks(tasks, view) {
     case 'today':
       return list.filter((t) => {
         if (t.completed) return false;
-        const b = timeBucket(t);
+        const b = timeBucket(t, now);
         return b === 'overdue' || b === 'today';
       });
     case 'upcoming':
       return list.filter((t) => {
         if (t.completed) return false;
-        const b = timeBucket(t);
+        const b = timeBucket(t, now);
         return b === 'tomorrow' || b === 'week' || b === 'later';
       });
     case 'someday':
@@ -39,10 +40,10 @@ export function filterTasks(tasks, view) {
   }
 }
 
-export function groupByBucket(tasks) {
+export function groupByBucket(tasks, now = dayjs()) {
   const groups = BUCKET_ORDER.map((bucket) => ({ bucket, tasks: [] }));
   for (const task of tasks) {
-    const b = timeBucket(task);
+    const b = timeBucket(task, now);
     const g = groups.find((g) => g.bucket === b) || groups[groups.length - 1];
     g.tasks.push(task);
   }

@@ -8,8 +8,10 @@ import {
   CheckCircle2,
   Circle,
   Sparkles,
+  UserCog,
 } from 'lucide-react';
 import { LILO_STATUSES, LILO_LOCATIONS } from '../utils/constants';
+import { useAuth } from '../context/AuthContext';
 import {
   monthDays,
   buildMonthEntries,
@@ -19,6 +21,7 @@ import {
   liloToCSV,
   formatMonth,
   currentMonth,
+  liloDefaultsFromProfile,
 } from '../utils/lilo';
 
 function downloadCSV(csv, month) {
@@ -33,9 +36,13 @@ function downloadCSV(csv, month) {
   URL.revokeObjectURL(url);
 }
 
-export default function LiloView({ entries, submissions, onUpdate, onAddEntries, onRemove, onReset, onSetSubmitted, onToast }) {
+export default function LiloView({ entries, submissions, onUpdate, onAddEntries, onRemove, onReset, onSetSubmitted, onToast, onOpenProfile }) {
+  const { profile } = useAuth();
   const [month, setMonth] = useState(() => currentMonth());
   const [resetArmed, setResetArmed] = useState(false);
+
+  // Defaults come from the signed-in user's profile (EID + shift schedule).
+  const defaults = useMemo(() => liloDefaultsFromProfile(profile?.custom_fields), [profile]);
 
   const monthEntries = useMemo(
     () => entries.filter((e) => e.month === month).sort((a, b) => (a.date < b.date ? -1 : 1)),
@@ -51,12 +58,12 @@ export default function LiloView({ entries, submissions, onUpdate, onAddEntries,
   const submitted = !!submissions[month];
   const days = monthDays(month);
   const modifiedCount = monthEntries.filter((e) =>
-    ['brgType', 'schedType', 'eid', 'status', 'startTime', 'endTime', 'location', 'remarks'].some((f) => isModified(f, e)),
+    ['brgType', 'schedType', 'eid', 'status', 'startTime', 'endTime', 'location', 'remarks'].some((f) => isModified(f, e, defaults)),
   ).length;
 
   const generate = () => {
     const existing = new Set(monthEntries.map((e) => e.date));
-    const toAdd = buildMonthEntries(month).filter((e) => !existing.has(e.date));
+    const toAdd = buildMonthEntries(month, {}, defaults).filter((e) => !existing.has(e.date));
     const n = onAddEntries(toAdd);
     onToast?.(n > 0 ? `Generated ${n} day${n !== 1 ? 's' : ''} for ${formatMonth(month)}` : `${formatMonth(month)} is already complete`);
   };
@@ -141,6 +148,17 @@ export default function LiloView({ entries, submissions, onUpdate, onAddEntries,
         </button>
       </div>
 
+      <div className="lilo-banner">
+        <UserCog size={15} />
+        EID and shift times default to your profile
+        {profile?.custom_fields?.eid ? ` (${profile.custom_fields.eid}, ${defaults.startTime}–${defaults.endTime})` : ''}.
+        {onOpenProfile && (
+          <button type="button" className="lilo-link" onClick={onOpenProfile}>
+            Edit profile
+          </button>
+        )}
+      </div>
+
       {submitted && (
         <div className="lilo-banner submitted">
           <CheckCircle2 size={16} />
@@ -170,7 +188,7 @@ export default function LiloView({ entries, submissions, onUpdate, onAddEntries,
             <Sparkles size={30} />
           </div>
           <h3>No LILO for {formatMonth(month)} yet</h3>
-          <p>Weekdays will be Scheduled and weekends Rest Day automatically. Generate the month, then edit any PTO / Sick / overtime.</p>
+          <p>Weekdays will be Scheduled and weekends Rest Day automatically, using your profile's EID and shift schedule. Generate the month, then edit any PTO / Sick / overtime.</p>
           <button type="button" className="btn btn-primary" onClick={generate}>
             <CalendarPlus size={16} /> Generate {formatMonth(month)}
           </button>
@@ -208,7 +226,7 @@ export default function LiloView({ entries, submissions, onUpdate, onAddEntries,
                       </td>
                       <td>
                         <select
-                          className={`lilo-cell ${isModified('status', e) ? 'edit' : ''}`}
+                          className={`lilo-cell ${isModified('status', e, defaults) ? 'edit' : ''}`}
                           value={e.status}
                           onChange={(ev) => onUpdate(e.id, { status: ev.target.value })}
                         >
@@ -222,7 +240,7 @@ export default function LiloView({ entries, submissions, onUpdate, onAddEntries,
                       <td>
                         <input
                           type="time"
-                          className={`lilo-cell ${isModified('startTime', e) ? 'edit' : ''}`}
+                          className={`lilo-cell ${isModified('startTime', e, defaults) ? 'edit' : ''}`}
                           value={to24h(e.startTime)}
                           onChange={(ev) => onUpdate(e.id, { startTime: to12h(ev.target.value) })}
                         />
@@ -230,14 +248,14 @@ export default function LiloView({ entries, submissions, onUpdate, onAddEntries,
                       <td>
                         <input
                           type="time"
-                          className={`lilo-cell ${isModified('endTime', e) ? 'edit' : ''}`}
+                          className={`lilo-cell ${isModified('endTime', e, defaults) ? 'edit' : ''}`}
                           value={to24h(e.endTime)}
                           onChange={(ev) => onUpdate(e.id, { endTime: to12h(ev.target.value) })}
                         />
                       </td>
                       <td>
                         <select
-                          className={`lilo-cell ${isModified('location', e) ? 'edit' : ''}`}
+                          className={`lilo-cell ${isModified('location', e, defaults) ? 'edit' : ''}`}
                           value={e.location}
                           onChange={(ev) => onUpdate(e.id, { location: ev.target.value })}
                         >
@@ -250,28 +268,28 @@ export default function LiloView({ entries, submissions, onUpdate, onAddEntries,
                       </td>
                       <td>
                         <input
-                          className={`lilo-cell ${isModified('brgType', e) ? 'edit' : ''}`}
+                          className={`lilo-cell ${isModified('brgType', e, defaults) ? 'edit' : ''}`}
                           value={e.brgType}
                           onChange={(ev) => onUpdate(e.id, { brgType: ev.target.value })}
                         />
                       </td>
                       <td>
                         <input
-                          className={`lilo-cell ${isModified('schedType', e) ? 'edit' : ''}`}
+                          className={`lilo-cell ${isModified('schedType', e, defaults) ? 'edit' : ''}`}
                           value={e.schedType}
                           onChange={(ev) => onUpdate(e.id, { schedType: ev.target.value })}
                         />
                       </td>
                       <td>
                         <input
-                          className={`lilo-cell ${isModified('eid', e) ? 'edit' : ''}`}
+                          className={`lilo-cell ${isModified('eid', e, defaults) ? 'edit' : ''}`}
                           value={e.eid}
                           onChange={(ev) => onUpdate(e.id, { eid: ev.target.value })}
                         />
                       </td>
                       <td>
                         <input
-                          className={`lilo-cell remarks ${isModified('remarks', e) ? 'edit' : ''}`}
+                          className={`lilo-cell remarks ${isModified('remarks', e, defaults) ? 'edit' : ''}`}
                           placeholder="—"
                           value={e.remarks}
                           onChange={(ev) => onUpdate(e.id, { remarks: ev.target.value })}

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Focusly</string>
+    <string name="title_activity_main">Focusly</string>
+    <string name="package_name">com.focusly.app</string>
+    <string name="custom_url_scheme">com.focusly.app</string>
+</resources>

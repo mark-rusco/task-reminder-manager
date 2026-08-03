@@ -43,6 +43,9 @@ export default function TrackerConfigModal({ open, config, onSave, onClose }) {
       rtoPeriod: form.rtoPeriod,
       rtoTarget: Math.max(0, Number(form.rtoTarget) || 0),
       rtoLocations: form.rtoLocations?.length ? form.rtoLocations : OFFICE_LOCATIONS,
+      leavePeriod: form.leavePeriod,
+      fiscalYearMonth: Math.min(12, Math.max(1, Number(form.fiscalYearMonth) || 1)),
+      overtimeAllowance: Math.max(0, Number(form.overtimeAllowance) || 0),
       ptoEnabled: form.ptoEnabled,
       ptoLimit: Math.max(0, Number(form.ptoLimit) || 0),
       sickEnabled: form.sickEnabled,
@@ -125,49 +128,112 @@ export default function TrackerConfigModal({ open, config, onSave, onClose }) {
               </label>
               <div className="form-grid-2">
                 <div className="form-section">
-                  <Toggle
-                    checked={form.ptoEnabled}
-                    onChange={(v) => set({ ptoEnabled: v })}
-                    label="PTO allowed"
-                    hint="Paid time off per month"
-                  />
-                  {form.ptoEnabled && (
-                    <>
-                      <label className="form-label">Limit (days)</label>
-                      <input
-                        type="number"
-                        min="0"
+                  <label className="form-label">Reset period</label>
+                  <select
+                    className="input"
+                    value={form.leavePeriod}
+                    onChange={(e) => set({ leavePeriod: e.target.value })}
+                    aria-label="Leave reset period"
+                  >
+                    <option value="year">Per year (fiscal)</option>
+                    <option value="month">Per month</option>
+                  </select>
+                  {form.leavePeriod === 'year' && (
+                    <div className="form-section">
+                      <label className="form-label">Fiscal year starts</label>
+                      <select
                         className="input"
-                        value={form.ptoLimit}
-                        onChange={(e) => set({ ptoLimit: e.target.value })}
-                        aria-label="PTO days allowed per month"
-                      />
-                    </>
+                        value={form.fiscalYearMonth}
+                        onChange={(e) => set({ fiscalYearMonth: e.target.value })}
+                        aria-label="Fiscal year start month"
+                      >
+                        {Array.from({ length: 12 }, (_, i) => {
+                          const m = i + 1;
+                          const name = new Date(2026, i, 1).toLocaleString('en-US', { month: 'long' });
+                          return (
+                            <option key={m} value={m}>
+                              {name} 1
+                            </option>
+                          );
+                        })}
+                      </select>
+                      <p className="form-hint">
+                        The leave count resets the day before this month starts.
+                      </p>
+                    </div>
                   )}
                 </div>
                 <div className="form-section">
-                  <Toggle
-                    checked={form.sickEnabled}
-                    onChange={(v) => set({ sickEnabled: v })}
-                    label="Sick leave allowed"
-                    hint="Sick days per month"
-                  />
-                  {form.sickEnabled && (
-                    <>
-                      <label className="form-label">Limit (days)</label>
-                      <input
-                        type="number"
-                        min="0"
-                        className="input"
-                        value={form.sickLimit}
-                        onChange={(e) => set({ sickLimit: e.target.value })}
-                        aria-label="Sick days allowed per month"
+                  <div className="form-grid-2">
+                    <div className="form-section">
+                      <Toggle
+                        checked={form.ptoEnabled}
+                        onChange={(v) => set({ ptoEnabled: v })}
+                        label="PTO allowed"
+                        hint="Paid time off"
                       />
-                    </>
-                  )}
+                      {form.ptoEnabled && (
+                        <>
+                          <label className="form-label">Limit (days)</label>
+                          <input
+                            type="number"
+                            min="0"
+                            className="input"
+                            value={form.ptoLimit}
+                            onChange={(e) => set({ ptoLimit: e.target.value })}
+                            aria-label="PTO days allowed"
+                          />
+                        </>
+                      )}
+                    </div>
+                    <div className="form-section">
+                      <Toggle
+                        checked={form.sickEnabled}
+                        onChange={(v) => set({ sickEnabled: v })}
+                        label="Sick leave allowed"
+                        hint="Sick days"
+                      />
+                      {form.sickEnabled && (
+                        <>
+                          <label className="form-label">Limit (days)</label>
+                          <input
+                            type="number"
+                            min="0"
+                            className="input"
+                            value={form.sickLimit}
+                            onChange={(e) => set({ sickLimit: e.target.value })}
+                            aria-label="Sick days allowed"
+                          />
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
-              <p className="form-hint">You&apos;ll be notified when you pass a limit (PTO / Sick) or hit your RTO target.</p>
+              <p className="form-hint">
+                {form.leavePeriod === 'year'
+                  ? `Counts apply for the whole fiscal year and reset at its end.`
+                  : `You&apos;ll be notified when you pass a limit (PTO / Sick) or hit your RTO target.`}
+              </p>
+            </section>
+
+            <section className="form-section">
+              <label className="form-label">Task grace period</label>
+              <div className="form-section">
+                <label className="form-label">Overtime allowance (minutes)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="15"
+                  className="input"
+                  value={form.overtimeAllowance}
+                  onChange={(e) => set({ overtimeAllowance: e.target.value })}
+                  aria-label="Overtime allowance in minutes"
+                />
+                <p className="form-hint">
+                  Tasks due &quot;today&quot; stay pending until your shift ends plus this many minutes — even when your shift runs past midnight (e.g. 4:00 PM – 1:00 AM).
+                </p>
+              </div>
             </section>
           </div>
 

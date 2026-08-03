@@ -2,6 +2,7 @@ import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import { parseShiftSchedule, to24h } from './lilo';
 
 dayjs.extend(customParseFormat);
 dayjs.extend(isSameOrAfter);
@@ -113,4 +114,43 @@ export function greeting(now = dayjs()) {
   if (h < 12) return 'Good morning';
   if (h < 18) return 'Good afternoon';
   return 'Good evening';
+}
+
+/** Minutes since midnight for a 'HH:MM' 24h string. */
+function minutesOfDay(t24) {
+  const m = String(t24).match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return null;
+  return Number(m[1]) * 60 + Number(m[2]);
+}
+
+/**
+ * Shift-aware "now". When the user's shift schedule crosses midnight
+ * (e.g. "04:00 PM - 01:00 AM") and it is still before the shift's end time
+ * plus an overtime allowance, the current workday has not rolled over yet —
+ * tasks due "yesterday" stay in Today instead of flipping to Overdue.
+ */
+export function shiftNow(now = dayjs(), shiftSchedule, overtimeMin = 0) {
+  const shift = parseShiftSchedule(shiftSchedule);
+  if (!shift) return now;
+  const start = minutesOfDay(to24h(shift.startTime));
+  const end = minutesOfDay(to24h(shift.endTime));
+  if (start == null || end == null) return now;
+  // Same-day shift (end after start) rolls over at midnight as usual.
+  if (end >= start) return now;
+  const nowMin = now.hour() * 60 + now.minute();
+  const cutoff = end + Math.max(0, overtimeMin);
+  if (nowMin < cutoff) {
+    // Still inside the overnight shift (plus overtime grace) → previous day.
+    return now.subtract(1, 'day');
+  }
+  return now;
+}
+
+/**
+ * Effective "today" start respecting the shift window. Tasks due on this
+ * date should remain pending. When an overnight shift + overtime allowance
+ * is still in progress, the workday is the previous calendar day.
+ */
+export function effectiveToday(now = dayjs(), shiftSchedule, overtimeMin = 0) {
+  return shiftNow(now, shiftSchedule, overtimeMin).startOf('day');
 }

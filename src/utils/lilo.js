@@ -17,32 +17,62 @@ export function monthDays(monthStr) {
   return days;
 }
 
+/**
+ * Parses a shift schedule string like "04:00 PM - 01:00 AM" into
+ * { startTime, endTime } in 12-hour format, or null when unparseable.
+ */
+export function parseShiftSchedule(str) {
+  if (!str || typeof str !== 'string') return null;
+  const parts = str.split(/\s*-\s*/).map((s) => s.trim()).filter(Boolean);
+  if (parts.length !== 2) return null;
+  const [start, end] = parts;
+  if (!/^\d{1,2}:\d{2}\s*(AM|PM)$/i.test(start) || !/^\d{1,2}:\d{2}\s*(AM|PM)$/i.test(end)) return null;
+  return { startTime: start, endTime: end };
+}
+
+/**
+ * Effective LILO defaults for a user, pulled from their profile
+ * custom_fields (EID + shift schedule). Falls back to the built-in
+ * defaults for anything missing.
+ */
+export function liloDefaultsFromProfile(customFields) {
+  const defaults = { ...LILO_DEFAULTS };
+  const cf = customFields && typeof customFields === 'object' ? customFields : {};
+  if (typeof cf.eid === 'string' && cf.eid.trim()) defaults.eid = cf.eid.trim();
+  const shift = parseShiftSchedule(cf.shift_schedule);
+  if (shift) {
+    defaults.startTime = shift.startTime;
+    defaults.endTime = shift.endTime;
+  }
+  return defaults;
+}
+
 /** Builds default entries for every day of a month. */
-export function buildMonthEntries(monthStr, overrides = {}) {
+export function buildMonthEntries(monthStr, overrides = {}, defaults = LILO_DEFAULTS) {
   return monthDays(monthStr).map(({ date }) => ({
     id: uid(),
     month: monthStr,
     date,
-    brgType: overrides.brgType ?? LILO_DEFAULTS.brgType,
-    schedType: overrides.schedType ?? LILO_DEFAULTS.schedType,
-    eid: overrides.eid ?? LILO_DEFAULTS.eid,
+    brgType: overrides.brgType ?? defaults.brgType,
+    schedType: overrides.schedType ?? defaults.schedType,
+    eid: overrides.eid ?? defaults.eid,
     status: overrides.status ?? liloDefaultStatus(date),
-    startTime: overrides.startTime ?? LILO_DEFAULTS.startTime,
-    endTime: overrides.endTime ?? LILO_DEFAULTS.endTime,
-    location: overrides.location ?? LILO_DEFAULTS.location,
-    remarks: overrides.remarks ?? LILO_DEFAULTS.remarks,
+    startTime: overrides.startTime ?? defaults.startTime,
+    endTime: overrides.endTime ?? defaults.endTime,
+    location: overrides.location ?? defaults.location,
+    remarks: overrides.remarks ?? defaults.remarks,
   }));
 }
 
 /** True when the given entry field differs from its default (used for highlighting). */
-export function isModified(field, entry) {
+export function isModified(field, entry, defaults = LILO_DEFAULTS) {
   switch (field) {
     case 'status':
       return entry.status !== liloDefaultStatus(entry.date);
     case 'remarks':
-      return (entry.remarks || '') !== LILO_DEFAULTS.remarks;
+      return (entry.remarks || '') !== defaults.remarks;
     default:
-      return entry[field] !== LILO_DEFAULTS[field];
+      return entry[field] !== defaults[field];
   }
 }
 

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Building2, CalendarPlus, CalendarOff, Settings2, CheckCircle2, Info, AlertTriangle } from 'lucide-react';
-import { computeTrackers, describeAlert } from '../utils/trackers';
+import { computeTrackers, describeAlert, fiscalYearRange } from '../utils/trackers';
 import { currentMonth, formatMonth } from '../utils/lilo';
 import TrackerConfigModal from './TrackerConfigModal.jsx';
 
@@ -21,6 +21,8 @@ export default function TrackersView({ entries, config, onUpdateConfig, onToast,
 
   const pct = (used, limit) => (limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0);
   const rtoPct = status.rtoTarget > 0 ? Math.min(100, Math.round((status.rtoGot / status.rtoTarget) * 100)) : 0;
+  const periodLabel = status.cfg.leavePeriod === 'year' ? 'fiscal year' : 'month';
+  const fy = status.cfg.leavePeriod === 'year' ? fiscalYearRange(month, status.cfg.fiscalYearMonth) : null;
 
   return (
     <div className="lilo-page tracker-page">
@@ -41,7 +43,9 @@ export default function TrackersView({ entries, config, onUpdateConfig, onToast,
 
       <div className="lilo-banner">
         <Info size={15} />
-        Based on your LILO for {formatMonth(month)} — edit days in the LILO Tracker to update these numbers.
+        {status.cfg.leavePeriod === 'year' && fy
+          ? `Leave counts span the fiscal year ${fy.start} to ${fy.end} (resets at the end). RTO is based on your LILO for ${formatMonth(month)} — edit days in the LILO Tracker to update these numbers.`
+          : `Based on your LILO for ${formatMonth(month)} — edit days in the LILO Tracker to update these numbers.`}
       </div>
 
       <div className="tracker-grid">
@@ -85,7 +89,7 @@ export default function TrackersView({ entries, config, onUpdateConfig, onToast,
               <span className="tracker-badge">{status.ptoRemaining} left</span>
             )}
           </div>
-          <p className="tracker-card-note">Paid time off used this month</p>
+          <p className="tracker-card-note">Paid time off used this {periodLabel}</p>
           <div className="tracker-number">
             <strong>{status.ptoUsed}</strong>
             <span>/{status.ptoLimit} days</span>
@@ -115,7 +119,7 @@ export default function TrackersView({ entries, config, onUpdateConfig, onToast,
               <span className="tracker-badge">{status.sickRemaining} left</span>
             )}
           </div>
-          <p className="tracker-card-note">Sick days this month</p>
+          <p className="tracker-card-note">Sick days this {periodLabel}</p>
           <div className="tracker-number">
             <strong>{status.sickUsed}</strong>
             <span>/{status.sickLimit} days</span>

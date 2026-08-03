@@ -1,9 +1,13 @@
 import { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, CheckCircle2, AlertTriangle, Zap } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useAppConfig } from '../hooks/useAppConfig';
+import { friendlyAuthError } from '../lib/authErrors';
 
 export default function AuthPage() {
   const { signIn, signUp, resetPassword } = useAuth();
+  const { config } = useAppConfig();
+  const registrationOpen = config.registration_open !== false;
   const [mode, setMode] = useState('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,7 +27,7 @@ export default function AuthPage() {
     try {
       if (forgot) {
         const err = await resetPassword(email.trim());
-        if (err) setError(err.message);
+        if (err) setError(friendlyAuthError(err));
         else setNotice('If that account exists, a reset link has been sent to your inbox.');
       } else if (mode === 'signup') {
         const { error: err, needsConfirmation } = await signUp(email.trim(), password);
@@ -63,10 +67,23 @@ export default function AuthPage() {
           <button type="button" className={mode === 'signin' ? 'on' : ''} onClick={() => { setMode('signin'); setForgot(false); setError(''); setNotice(''); }}>
             Sign in
           </button>
-          <button type="button" className={mode === 'signup' ? 'on' : ''} onClick={() => { setMode('signup'); setForgot(false); setError(''); setNotice(''); }}>
+          <button
+            type="button"
+            className={mode === 'signup' ? 'on' : ''}
+            onClick={() => { setMode('signup'); setForgot(false); setError(''); setNotice(''); }}
+            disabled={!registrationOpen}
+            title={registrationOpen ? '' : 'Registration is closed'}
+          >
             Create account
           </button>
         </div>
+
+        {!registrationOpen && (
+          <div className="auth-alert error">
+            <AlertTriangle size={15} />
+            Registration is currently closed. Please contact an administrator to create an account.
+          </div>
+        )}
 
         <form onSubmit={submit} className="auth-form">
           {!forgot && (

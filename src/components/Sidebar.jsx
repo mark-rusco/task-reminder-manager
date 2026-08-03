@@ -9,6 +9,7 @@ import {
   Plus,
   MoreHorizontal,
   ExternalLink,
+  ShieldCheck,
 } from 'lucide-react';
 
 const NAV = [
@@ -31,8 +32,10 @@ export default function Sidebar({
   onManageLabels,
   counts,
   dashboards,
+  isAdmin,
 }) {
   const quickLinks = (dashboards || []).filter((d) => d.url && d.url.trim()).sort((a, b) => a.name.localeCompare(b.name));
+  const navItems = isAdmin ? [...NAV, { id: 'admin', label: 'Admin', icon: ShieldCheck }] : NAV;
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
@@ -49,7 +52,7 @@ export default function Sidebar({
       </div>
 
       <nav className="sidebar-nav">
-        {NAV.map((item) => {
+        {navItems.map((item) => {
           const Icon = item.icon;
           const active = activeView === item.id && !activeLabel;
           return (
