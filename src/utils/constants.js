@@ -46,11 +46,12 @@ export function dashboardStatusMeta(value) {
 }
 
 export const DASHBOARD_TYPES = [
-  { value: 'powerbi', label: 'Power BI Dashboard', color: '#f2c811' },
-  { value: 'excel', label: 'Excel', color: '#217346' },
-  { value: 'sharepoint', label: 'SharePoint Folder', color: '#0078d4' },
+  { value: 'powerbi', label: 'Power BI Dashboard', color: '#f2c811', icon: 'bar-chart' },
+  { value: 'excel', label: 'Excel', color: '#217346', icon: 'file-spreadsheet' },
+  { value: 'sharepoint', label: 'SharePoint Folder', color: '#0078d4', icon: 'folder' },
 ];
 
+/** Fallback lookup used when the DB-backed dashboard type list isn't loaded. */
 export function dashboardTypeMeta(value) {
   return DASHBOARD_TYPES.find((t) => t.value === value) || DASHBOARD_TYPES[0];
 }

@@ -33,11 +33,14 @@ import ConfirmDialog from './components/ConfirmDialog.jsx';
 import ProfileModal from './components/ProfileModal.jsx';
 import Toasts from './components/Toasts.jsx';
 import { SettingsProvider } from './context/SettingsContext.jsx';
+import { DashboardTypesProvider } from './context/DashboardTypesContext.jsx';
 
 export default function App() {
   return (
     <SettingsProvider>
-      <AppShell />
+      <DashboardTypesProvider>
+        <AppShell />
+      </DashboardTypesProvider>
     </SettingsProvider>
   );
 }
@@ -195,9 +198,13 @@ function AppShell() {
   );
 
   const removeDashboard = useCallback(
-    (id) => {
+    async (id) => {
+      const res = await deleteDashboard(id);
+      if (res && res.error) {
+        pushToast(`Couldn't delete dashboard: ${res.error.message} — it may reappear on refresh.`, 'warning');
+        return;
+      }
       setDashboardModal({ open: false, initial: null });
-      deleteDashboard(id);
       if (selectedDashboardId === id) setSelectedDashboardId(null);
       pushToast('Dashboard deleted', 'success');
     },
@@ -457,6 +464,7 @@ function AppShell() {
                 onToggleTask={toggleComplete}
                 onUpdateProgress={(id, v) => updateDashboard(id, { progress: v })}
                 onUpdateStatus={(id, v) => updateDashboard(id, { status: v })}
+                onToast={pushToast}
               />
             ) : (
               <DashboardsView

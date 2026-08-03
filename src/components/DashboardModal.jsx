@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { X, Trash2 } from 'lucide-react';
-import { DASHBOARD_STATUSES, DASHBOARD_TYPES } from '../utils/constants';
+import { DASHBOARD_STATUSES } from '../utils/constants';
+import { useDashboardTypes } from '../context/DashboardTypesContext';
 import DashboardTypeIcon from './DashboardTypeIcon.jsx';
 
 const EMPTY = {
@@ -16,6 +17,7 @@ const EMPTY = {
 };
 
 export default function DashboardModal({ open, initial, onClose, onSave, onDelete }) {
+  const { types } = useDashboardTypes();
   const [form, setForm] = useState(EMPTY);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const nameRef = useRef(null);
@@ -97,7 +99,7 @@ export default function DashboardModal({ open, initial, onClose, onSave, onDelet
             <div className="form-section">
               <label className="form-label">Type</label>
               <div className="type-row">
-                {DASHBOARD_TYPES.map((t) => {
+                {types.map((t) => {
                   const on = form.type === t.value;
                   return (
                     <button

@@ -3,6 +3,7 @@ import { ArrowLeft, ExternalLink, Pencil, Plus, Users, Calendar, StickyNote, Ima
 import { DASHBOARD_STATUSES, dashboardStatusMeta } from '../utils/constants';
 import { formatDueDate } from '../utils/dates';
 import DashboardTypeIcon from './DashboardTypeIcon.jsx';
+import DashboardNotes from './DashboardNotes.jsx';
 
 export default function DashboardDetail({
   dashboard,
@@ -14,6 +15,7 @@ export default function DashboardDetail({
   onToggleTask,
   onUpdateProgress,
   onUpdateStatus,
+  onToast,
 }) {
   const sm = dashboardStatusMeta(dashboard.status);
 
@@ -74,6 +76,8 @@ export default function DashboardDetail({
           <p className="dashboard-notes-text">{dashboard.notes}</p>
         </section>
       )}
+
+      <DashboardNotes dashboardId={dashboard.id} onToast={onToast} />
 
       <div className="dashboard-detail-panels">
         <section className="panel">

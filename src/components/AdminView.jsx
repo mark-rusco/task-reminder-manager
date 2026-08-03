@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ShieldCheck, Users, KeyRound, ListChecks, History, Settings2, Loader2, Plus, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
+import { ShieldCheck, Users, KeyRound, ListChecks, History, Settings2, Loader2, Plus, Trash2, ToggleLeft, ToggleRight, LayoutDashboard } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { logAudit } from '../lib/audit';
 import { friendlyAuthError } from '../lib/authErrors';
+import DashboardTypesAdmin from './DashboardTypesAdmin.jsx';
 
 const TABS = [
   { id: 'users', label: 'Users', icon: Users },
   { id: 'roles', label: 'Roles & Permissions', icon: KeyRound },
   { id: 'fields', label: 'Profile Fields', icon: ListChecks },
+  { id: 'types', label: 'Dashboard Types', icon: LayoutDashboard },
   { id: 'settings', label: 'Settings', icon: Settings2 },
   { id: 'audit', label: 'Audit Trail', icon: History },
 ];
@@ -48,6 +50,7 @@ export default function AdminView({ onToast }) {
       {tab === 'users' && <UsersTab onToast={onToast} />}
       {tab === 'roles' && <RolesTab onToast={onToast} />}
       {tab === 'fields' && <FieldsTab onToast={onToast} />}
+      {tab === 'types' && <DashboardTypesAdmin onToast={onToast} />}
       {tab === 'settings' && <SettingsTab onToast={onToast} />}
       {tab === 'audit' && <AuditTab onToast={onToast} />}
     </div>
@@ -663,6 +666,7 @@ const ACTIONS = [
   'users.role_change', 'users.disable', 'users.enable', 'users.password_reset',
   'roles.create', 'roles.update', 'roles.delete', 'roles.permission_grant', 'roles.permission_revoke',
   'field.create', 'field.update', 'field.delete', 'config.update',
+  'dash_type.create', 'dash_type.update', 'dash_type.delete',
 ];
 
 function AuditTab({ onToast }) {

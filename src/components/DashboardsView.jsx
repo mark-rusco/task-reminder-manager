@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Search, Plus, LayoutDashboard, ExternalLink, Pencil, Trash2, Link2, CalendarClock } from 'lucide-react';
-import { DASHBOARD_STATUSES, dashboardStatusMeta, dashboardTypeMeta } from '../utils/constants';
+import { DASHBOARD_STATUSES, dashboardStatusMeta } from '../utils/constants';
 import { formatDueDate, isOverdue } from '../utils/dates';
+import { useDashboardTypes } from '../context/DashboardTypesContext';
 import DashboardTypeIcon from './DashboardTypeIcon.jsx';
 
 export default function DashboardsView({
@@ -15,6 +16,7 @@ export default function DashboardsView({
 }) {
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
+  const { typeMeta } = useDashboardTypes();
 
   const linkedCount = useMemo(() => {
     const map = {};
@@ -43,9 +45,9 @@ export default function DashboardsView({
           : d.name.toLowerCase().includes(q) ||
             (d.description || '').toLowerCase().includes(q) ||
             (d.workspace || '').toLowerCase().includes(q) ||
-            dashboardTypeMeta(d.type).label.toLowerCase().includes(q),
+            typeMeta(d.type).label.toLowerCase().includes(q),
       );
-  }, [dashboards, filter, search]);
+  }, [dashboards, filter, search, typeMeta]);
 
   return (
     <div className="dashboards-page">

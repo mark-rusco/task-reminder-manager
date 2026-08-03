@@ -191,11 +191,29 @@ export function useDashboards() {
   );
 
   const deleteDashboard = useCallback(
-    (id) => {
+    async (id) => {
       const target = dashboardsRef.current.find((d) => d.id === id);
       setDashboards((prev) => prev.filter((d) => d.id !== id));
-      if (backend) supabase.from('dashboards').delete().eq('id', id);
-      return target;
+      if (backend) {
+        const { data, error } = await supabase
+          .from('dashboards')
+          .delete()
+          .eq('id', id)
+          .select();
+        if (error) {
+          // Restore locally so the UI matches the server, and surface the error.
+          setDashboards((prev) => (target && !prev.some((d) => d.id === id) ? [target, ...prev] : prev));
+          return { ok: false, error };
+        }
+        if (!data || data.length === 0) {
+          // PostgREST returns 204 even when 0 rows matched — the row wasn't
+          // removed (not in the DB, or RLS). Keep it so the UI matches the
+          // server instead of silently losing it, and surface the failure.
+          setDashboards((prev) => (target && !prev.some((d) => d.id === id) ? [target, ...prev] : prev));
+          return { ok: false, error: { message: 'dashboard was not in the database' } };
+        }
+      }
+      return { ok: true };
     },
     [backend],
   );

@@ -3216,6 +3216,50 @@ textarea.input {
   white-space: pre-wrap;
 }
 
+.note-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.note-item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  background: var(--surface-2, var(--surface));
+}
+
+.note-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.note-date {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.note-item-actions {
+  display: flex;
+  gap: 2px;
+}
+
+.note-content {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-1);
+  white-space: pre-wrap;
+}
+
 /* ---------- Dashboard detail ---------- */
 
 .dashboard-detail {
@@ -4361,6 +4405,35 @@ td.admin-th-actions {
 
 .admin-filter-row .input {
   width: auto;
+}
+
+.color-picker {
+  width: 40px;
+  height: 32px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.color-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.admin-color-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-color-field .form-label {
+  margin: 0;
 }
 
 /* ---------- Audit table ---------- */
