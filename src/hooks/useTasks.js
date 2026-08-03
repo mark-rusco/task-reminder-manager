@@ -114,6 +114,7 @@ const toRow = (t, userId) => ({
   completed: !!t.completed,
   completed_at: t.completedAt || null,
   created_at: t.createdAt,
+  pinned: !!t.pinned,
   task_type: t.taskType || 'task',
   meeting_notes: t.meetingNotes || null,
   screenshot: t.screenshot || null,
@@ -134,6 +135,7 @@ const fromRow = (r) => ({
   completed: r.completed,
   completedAt: r.completed_at,
   createdAt: r.created_at,
+  pinned: !!r.pinned,
   taskType: r.task_type || 'task',
   meetingNotes: r.meeting_notes || '',
   screenshot: r.screenshot || null,
@@ -319,6 +321,7 @@ export function useTasks() {
         meetingNotes: '',
         screenshot: null,
         dashboardIds: [],
+        pinned: false,
         ...data,
       };
       setTasks((prev) => [task, ...prev]);
@@ -377,6 +380,16 @@ export function useTasks() {
       });
     },
     [backend, persistTask, pushToast],
+  );
+
+  const togglePin = useCallback(
+    (id) => {
+      const task = tasksRef.current.find((t) => t.id === id);
+      if (!task) return;
+      updateTask(id, { pinned: !task.pinned });
+      pushToast(task.pinned ? 'Task unpinned' : 'Task pinned — it will appear first on your next shift');
+    },
+    [updateTask, pushToast],
   );
 
   const toggleComplete = useCallback(
@@ -477,6 +490,7 @@ export function useTasks() {
     updateTask,
     deleteTask,
     toggleComplete,
+    togglePin,
     addLabel,
     updateLabel,
     deleteLabel,

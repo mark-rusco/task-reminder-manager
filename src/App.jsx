@@ -58,6 +58,7 @@ function AppShell() {
     updateTask,
     deleteTask,
     toggleComplete,
+    togglePin,
     addLabel,
     deleteLabel,
     clearCompleted,
@@ -490,6 +491,7 @@ function AppShell() {
                 onToggle={toggleComplete}
                 onEdit={openEditTask}
                 onDelete={deleteTask}
+                onTogglePin={togglePin}
                 onOpenDashboard={openDashboard}
                 onCreate={() => openNewTask(defaultDateForView)}
               />

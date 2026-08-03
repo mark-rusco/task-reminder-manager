@@ -681,6 +681,28 @@ kbd {
   opacity: 0.75;
 }
 
+.task-item.is-pinned {
+  border-color: var(--primary);
+  background: linear-gradient(180deg, var(--primary-soft), var(--surface) 60%);
+}
+
+.task-item.is-pinned .task-title {
+  color: var(--primary-strong);
+  font-weight: 600;
+}
+
+.task-item.is-pinned .task-actions .icon-btn.active {
+  color: var(--primary);
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.chip-pinned {
+  background: var(--primary-soft);
+  color: var(--primary-strong);
+  border-color: var(--primary);
+}
+
 .task-meta {
   display: flex;
   flex-wrap: wrap;

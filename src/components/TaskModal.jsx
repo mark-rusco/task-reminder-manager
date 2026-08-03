@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { X, Trash2, Calendar, Flag, Users, Briefcase, Upload, Loader2, ChevronDown, RefreshCw, Link2 } from 'lucide-react';
+import { X, Trash2, Calendar, Flag, Users, Briefcase, Upload, Loader2, ChevronDown, RefreshCw, Link2, Pin } from 'lucide-react';
 import { PRIORITIES, priorityMeta, TASK_TYPES } from '../utils/constants';
 import RecurrenceEditor from './RecurrenceEditor.jsx';
 import ReminderEditor from './ReminderEditor.jsx';
@@ -23,6 +23,7 @@ const EMPTY_FORM = {
   meetingNotes: '',
   screenshot: null,
   dashboardIds: [],
+  pinned: false,
 };
 
 const TYPE_ICON = {
@@ -77,6 +78,7 @@ export default function TaskModal({
           meetingNotes: initial.meetingNotes || '',
           screenshot: initial.screenshot || null,
           dashboardIds: initial.dashboardIds || [],
+          pinned: !!initial.pinned,
         });
       } else {
         setForm({ ...EMPTY_FORM, dueDate: defaultDate || todayStr(), taskType: defaultType, dashboardIds: defaultDashboardIds });
@@ -116,6 +118,7 @@ export default function TaskModal({
       meetingNotes: form.meetingNotes.trim(),
       screenshot: form.screenshot,
       dashboardIds: form.dashboardIds || [],
+      pinned: form.pinned,
     });
   };
 
@@ -331,6 +334,19 @@ export default function TaskModal({
                 {dashboardPicker}
               </div>
             )}
+
+            <div className="form-section">
+              <label className="form-label">Pin</label>
+              <button
+                type="button"
+                className={`chip chip-btn pin-toggle ${form.pinned ? 'on' : ''}`}
+                onClick={() => set({ pinned: !form.pinned })}
+                aria-pressed={form.pinned}
+              >
+                <Pin size={13} />
+                {form.pinned ? 'Pinned — first on your next shift' : 'Pin this task'}
+              </button>
+            </div>
 
             <div className="form-section">
               <label className="form-label">Priority</label>

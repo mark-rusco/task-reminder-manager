@@ -1,9 +1,9 @@
 import { timeBucket, formatDueDate, isOverdue } from '../utils/dates';
 import { priorityMeta } from '../utils/constants';
 import { hasRecurrence, describeRecurrence } from '../utils/recurrence';
-import { Repeat2, Bell, Flag, Pencil, Trash2, Users, Link2, Image as ImageIcon, RefreshCw } from 'lucide-react';
+import { Repeat2, Bell, Flag, Pencil, Trash2, Users, Link2, Image as ImageIcon, RefreshCw, Pin } from 'lucide-react';
 
-export default function TaskItem({ task, labels, dashboards, now, onToggle, onEdit, onDelete, onOpenDashboard }) {
+export default function TaskItem({ task, labels, dashboards, now, onToggle, onEdit, onDelete, onOpenDashboard, onTogglePin }) {
   const bucket = timeBucket(task, now);
   const overdue = isOverdue(task, now);
   const prio = priorityMeta(task.priority);
@@ -18,7 +18,7 @@ export default function TaskItem({ task, labels, dashboards, now, onToggle, onEd
     task.completed ? 'due-done' : overdue ? 'due-overdue' : bucket === 'today' ? 'due-today' : '';
 
   return (
-    <li className={`task-item ${task.completed ? 'is-completed' : ''} prio-${task.priority}`}>
+    <li className={`task-item ${task.completed ? 'is-completed' : ''} ${task.pinned ? 'is-pinned' : ''} prio-${task.priority}`}>
       <div className="task-row">
         <button
           type="button"
@@ -45,6 +45,12 @@ export default function TaskItem({ task, labels, dashboards, now, onToggle, onEd
           }}
         >
           <div className="task-title-row">
+            {task.pinned && (
+              <span className="chip chip-pinned" title="Pinned — shown first on your next shift">
+                <Pin size={12} />
+                Pinned
+              </span>
+            )}
             {isMeeting && (
               <span className="chip chip-meeting" title="Meeting">
                 <Users size={12} />
@@ -126,6 +132,14 @@ export default function TaskItem({ task, labels, dashboards, now, onToggle, onEd
         </div>
 
         <div className="task-actions">
+          <button
+            className={`icon-btn ${task.pinned ? 'active' : ''}`}
+            onClick={() => onTogglePin && onTogglePin(task.id)}
+            title={task.pinned ? 'Unpin task' : 'Pin task — top of your list on the next shift'}
+            aria-label={task.pinned ? 'Unpin task' : 'Pin task'}
+          >
+            <Pin size={15} />
+          </button>
           <button className="icon-btn" onClick={() => onEdit(task)} title="Edit task">
             <Pencil size={15} />
           </button>

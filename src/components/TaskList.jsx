@@ -13,7 +13,7 @@ const BUCKET_ICON = {
   someday: 'someday',
 };
 
-export default function TaskList({ tasks, labels, dashboards, now, onToggle, onEdit, onDelete, view, onOpenDashboard, onCreate }) {
+export default function TaskList({ tasks, labels, dashboards, now, onToggle, onEdit, onDelete, onTogglePin, view, onOpenDashboard, onCreate }) {
   const groups = useMemo(() => groupByBucket(filterTasks(tasks, view, now), now), [tasks, view, now]);
   const hasAny = groups.some((g) => g.tasks.length > 0);
 
@@ -42,6 +42,7 @@ export default function TaskList({ tasks, labels, dashboards, now, onToggle, onE
                   onToggle={onToggle}
                   onEdit={onEdit}
                   onDelete={onDelete}
+                  onTogglePin={onTogglePin}
                   onOpenDashboard={onOpenDashboard}
                 />
               ))}

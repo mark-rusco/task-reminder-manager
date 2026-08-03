@@ -47,9 +47,10 @@ export function groupByBucket(tasks, now = dayjs()) {
     const g = groups.find((g) => g.bucket === b) || groups[groups.length - 1];
     g.tasks.push(task);
   }
-  // Sort within each group: by priority desc, then due time, then created.
+  // Sort within each group: pinned first, then priority desc, then due time, then created.
   for (const g of groups) {
     g.tasks.sort((a, b) => {
+      if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
       const pw = priorityWeight(b) - priorityWeight(a);
       if (pw !== 0) return pw;
       const at = a.dueTime || '99:99';
