@@ -43,6 +43,8 @@ export function useLilo(onToast) {
 
   const entriesRef = useRef(entries);
   entriesRef.current = entries;
+  const submissionsRef = useRef(submissions);
+  submissionsRef.current = submissions;
 
   const pending = useRef({});
   const timer = useRef(null);
@@ -97,16 +99,34 @@ export function useLilo(onToast) {
       push(`Couldn't load LILO from Supabase: ${err && err.message ? err.message : err}`);
       return;
     }
-    // Never clobber a valid local cache with an empty backend result. The backend
-    // can appear empty when its tables/migrations aren't set up or writes didn't
-    // persist, while the user still has legitimately generated entries locally.
-    if (es && (es.length || entriesRef.current.length === 0)) setEntries(es.map(fromRow));
+    // Backend is the source of truth when it has data. When it's empty but the
+    // user has local-only entries (e.g. generated while signed out), adopt them
+    // into the DB so they sync across devices and can be deleted server-side —
+    // same resolution as tasks/dashboards. Never reseed anything on a refresh.
+    if (es && es.length) {
+      setEntries(es.map(fromRow));
+    } else if (es && entriesRef.current.length > 0) {
+      const local = entriesRef.current;
+      const { error: ie } = await supabase.from('lilo_entries').upsert(local.map((e) => toRow(e, userId)));
+      if (ie) push(`Couldn't upload your LILO entries: ${ie.message}`);
+    } else if (es) {
+      setEntries([]);
+    }
     if (subs && subs.length) {
       const map = {};
       for (const s of subs) if (s.submitted_at) map[s.month] = s.submitted_at;
       setSubmissions(map);
+    } else if (subs) {
+      const localSubs = submissionsRef.current || {};
+      const months = Object.keys(localSubs).filter((m) => localSubs[m]);
+      if (months.length) {
+        const { error: se } = await supabase
+          .from('lilo_submissions')
+          .upsert(months.map((m) => ({ user_id: userId, month: m, submitted_at: localSubs[m] })));
+        if (se) push(`Couldn't upload your LILO submissions: ${se.message}`);
+      }
     }
-  }, [backend, push]);
+  }, [backend, push, userId]);
 
   // Load from backend when authed.
   useEffect(() => {
