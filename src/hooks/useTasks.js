@@ -402,12 +402,10 @@ export function useTasks() {
       }
       if (task.recurrence && task.recurrence.freq !== 'none') {
         const nextDate = nextOccurrence(task.recurrence, task.dueDate || todayStr());
-        setTasks((prev) =>
-          prev.map((t) =>
-            t.id === id ? { ...t, completed: true, completedAt: new Date().toISOString() } : t,
-          ),
-        );
-        if (backend) supabase.from('tasks').update({ completed: true, completed_at: new Date().toISOString() }).eq('id', id);
+        // Persist the completion via the same robust upsert used everywhere else
+        // (surfaces write errors instead of silently dropping the update, so the
+        // completed flag can't revert and the task reappear on Inbox on refresh).
+        updateTask(id, { completed: true, completedAt: new Date().toISOString() });
         if (nextDate) {
           const next = {
             ...task,
@@ -427,7 +425,7 @@ export function useTasks() {
         updateTask(id, { completed: true, completedAt: new Date().toISOString() });
       }
     },
-    [backend, updateTask, persistTask, pushToast],
+    [updateTask, persistTask, pushToast],
   );
 
   const addLabel = useCallback(
