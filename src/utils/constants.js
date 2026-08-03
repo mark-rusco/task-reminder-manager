@@ -45,6 +45,16 @@ export function dashboardStatusMeta(value) {
   return DASHBOARD_STATUSES.find((s) => s.value === value) || DASHBOARD_STATUSES[0];
 }
 
+export const DASHBOARD_TYPES = [
+  { value: 'powerbi', label: 'Power BI Dashboard', color: '#f2c811' },
+  { value: 'excel', label: 'Excel', color: '#217346' },
+  { value: 'sharepoint', label: 'SharePoint Folder', color: '#0078d4' },
+];
+
+export function dashboardTypeMeta(value) {
+  return DASHBOARD_TYPES.find((t) => t.value === value) || DASHBOARD_TYPES[0];
+}
+
 export function uid() {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
   return `id-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
@@ -63,6 +73,8 @@ export const LILO_SUBMISSIONS_KEY = 'lilo-submissions';
  *  app never re-seeds demo tasks for an established account (which would
  *  resurrect deleted tasks on refresh). */
 export const ONBOARDED_KEY = 'onboarded';
+/** Same guard for the dashboards inventory. */
+export const DASHBOARDS_ONBOARDED_KEY = 'dashboards-onboarded';
 
 /** Shared stable UUID used by the demo dashboard + its linked sample meeting. */
 export const DEMO_DASHBOARD_ID = '00000000-0000-4000-8000-000000000001';

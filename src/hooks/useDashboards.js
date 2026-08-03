@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { loadState, saveState } from '../utils/storage';
-import { DASHBOARDS_KEY, DEMO_DASHBOARD_ID, uid } from '../utils/constants';
+import { DASHBOARDS_KEY, DASHBOARDS_ONBOARDED_KEY, DEMO_DASHBOARD_ID, uid } from '../utils/constants';
 
 function seedDashboards() {
   return [
@@ -15,6 +15,8 @@ function seedDashboards() {
       status: 'in-progress',
       progress: 60,
       dueDate: '',
+      type: 'powerbi',
+      notes: '',
       createdAt: new Date().toISOString(),
     },
     {
@@ -26,6 +28,8 @@ function seedDashboards() {
       status: 'planning',
       progress: 15,
       dueDate: '',
+      type: 'powerbi',
+      notes: '',
       createdAt: new Date().toISOString(),
     },
   ];
@@ -41,6 +45,8 @@ const toRow = (d, userId) => ({
   status: d.status || 'planning',
   progress: Math.max(0, Math.min(100, Number(d.progress) || 0)),
   due_date: d.dueDate || null,
+  type: d.type || 'powerbi',
+  notes: d.notes || null,
   created_at: d.createdAt,
 });
 
@@ -53,6 +59,8 @@ const fromRow = (r) => ({
   status: r.status || 'planning',
   progress: Number(r.progress) || 0,
   dueDate: r.due_date || '',
+  type: r.type || 'powerbi',
+  notes: r.notes || '',
   createdAt: r.created_at,
 });
 
@@ -71,7 +79,6 @@ export function useDashboards() {
     return existing || [];
   });
   const [syncing, setSyncing] = useState(false);
-  const didSeedRef = useRef(false);
 
   const dashboardsRef = useRef(dashboards);
   dashboardsRef.current = dashboards;
@@ -90,18 +97,36 @@ export function useDashboards() {
         .select('*')
         .order('created_at', { ascending: true });
       if (!active) return;
-      if (error) setDashboards((prev) => prev);
-      const rows = data || [];
-      if (rows.length === 0 && !didSeedRef.current) {
-        didSeedRef.current = true;
-        const seeded = seedDashboards();
+      if (error) {
+        // Read failed — keep whatever we have locally and stay put.
+        setSyncing(false);
+        return;
+      }
+      const dbDashboards = (data || []).map(fromRow);
+      const hasLocal = dashboardsRef.current.length > 0;
+
+      if (dbDashboards.length > 0) {
+        // Backend is the source of truth. Do NOT merge localStorage-only
+        // dashboards back in — one deleted from the DB would otherwise be
+        // resurrected from the local cache on every refresh.
+        setDashboards(dbDashboards);
+        saveState(DASHBOARDS_ONBOARDED_KEY, true);
+      } else if (hasLocal) {
+        // Backend empty but the user has local dashboards (e.g. added while
+        // signed out, or the localStorage seed). Adopt them into the DB so they
+        // sync and survive refreshes instead of vanishing.
+        const local = dashboardsRef.current;
         const { error: ie } = await supabase
           .from('dashboards')
-          .insert(seeded.map((s) => toRow(s, userId)));
+          .upsert(local.map((s) => toRow(s, userId)));
         if (!active) return;
-        if (!ie) setDashboards(seeded);
+        if (!ie) saveState(DASHBOARDS_ONBOARDED_KEY, true);
       } else {
-        setDashboards(rows.map(fromRow));
+        // Backend empty and nothing local — brand new account or one whose
+        // dashboards were all deleted. Never reseed demo data, or deleted
+        // dashboards would reappear on every refresh.
+        setDashboards([]);
+        saveState(DASHBOARDS_ONBOARDED_KEY, true);
       }
       setSyncing(false);
     })();
@@ -130,15 +155,16 @@ export function useDashboards() {
   useEffect(() => saveState(DASHBOARDS_KEY, dashboards), [dashboards]);
 
   const persist = useCallback(
-    (d) => {
-      if (!backend) return Promise.resolve();
-      return supabase.from('dashboards').upsert(toRow(d, userId));
+    async (d) => {
+      if (!backend) return { ok: true };
+      const { error } = await supabase.from('dashboards').upsert(toRow(d, userId));
+      return { ok: !error, error };
     },
     [backend, userId],
   );
 
   const addDashboard = useCallback(
-    (data) => {
+    async (data) => {
       const d = {
         id: uid(),
         status: 'planning',
@@ -147,17 +173,19 @@ export function useDashboards() {
         ...data,
       };
       setDashboards((prev) => [...prev, d]);
-      persist(d);
-      return d;
+      const res = await persist(d);
+      return { dashboard: d, ...res };
     },
     [persist],
   );
 
   const updateDashboard = useCallback(
-    (id, patch) => {
+    async (id, patch) => {
       const target = dashboardsRef.current.find((d) => d.id === id);
       setDashboards((prev) => prev.map((d) => (d.id === id ? { ...d, ...patch } : d)));
-      if (target) persist({ ...target, ...patch });
+      if (!target) return { ok: true };
+      const res = await persist({ ...target, ...patch });
+      return res;
     },
     [persist],
   );

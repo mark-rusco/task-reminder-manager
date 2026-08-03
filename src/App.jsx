@@ -179,13 +179,15 @@ function AppShell() {
   );
 
   const saveDashboard = useCallback(
-    (data) => {
+    async (data) => {
       if (dashboardModal.initial) {
-        updateDashboard(dashboardModal.initial.id, data);
-        pushToast('Dashboard updated', 'success');
+        const res = await updateDashboard(dashboardModal.initial.id, data);
+        if (res && res.error) pushToast(`Couldn't save dashboard: ${res.error.message}`, 'warning');
+        else pushToast('Dashboard updated', 'success');
       } else {
-        addDashboard(data);
-        pushToast('Dashboard added', 'success');
+        const res = await addDashboard(data);
+        if (res && res.error) pushToast(`Couldn't save dashboard: ${res.error.message}`, 'warning');
+        else pushToast('Dashboard added', 'success');
       }
       setDashboardModal({ open: false, initial: null });
     },

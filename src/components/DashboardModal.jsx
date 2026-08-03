@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { X, Trash2 } from 'lucide-react';
-import { DASHBOARD_STATUSES } from '../utils/constants';
+import { DASHBOARD_STATUSES, DASHBOARD_TYPES } from '../utils/constants';
+import DashboardTypeIcon from './DashboardTypeIcon.jsx';
 
 const EMPTY = {
   name: '',
@@ -10,6 +11,8 @@ const EMPTY = {
   status: 'planning',
   progress: 0,
   dueDate: '',
+  type: 'powerbi',
+  notes: '',
 };
 
 export default function DashboardModal({ open, initial, onClose, onSave, onDelete }) {
@@ -30,6 +33,8 @@ export default function DashboardModal({ open, initial, onClose, onSave, onDelet
           status: initial.status || 'planning',
           progress: Number(initial.progress) || 0,
           dueDate: initial.dueDate || '',
+          type: initial.type || 'powerbi',
+          notes: initial.notes || '',
         });
       } else {
         setForm({ ...EMPTY });
@@ -57,6 +62,8 @@ export default function DashboardModal({ open, initial, onClose, onSave, onDelet
       status: form.status,
       progress: Number(form.progress),
       dueDate: form.dueDate || null,
+      type: form.type,
+      notes: form.notes.trim(),
     });
   };
   return (
@@ -87,6 +94,35 @@ export default function DashboardModal({ open, initial, onClose, onSave, onDelet
               onChange={(e) => set({ description: e.target.value })}
             />
 
+            <div className="form-section">
+              <label className="form-label">Type</label>
+              <div className="type-row">
+                {DASHBOARD_TYPES.map((t) => {
+                  const on = form.type === t.value;
+                  return (
+                    <button
+                      key={t.value}
+                      type="button"
+                      className={`chip chip-btn ${on ? 'on' : ''}`}
+                      style={on ? { borderColor: t.color, color: t.color, background: `${t.color}1f` } : undefined}
+                      onClick={() => set({ type: t.value })}
+                    >
+                      <DashboardTypeIcon type={t.value} size={13} />
+                      {t.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <textarea
+              className="input"
+              rows={3}
+              placeholder="Notes — links, refresh schedule, owners, quirks… (optional)"
+              value={form.notes}
+              onChange={(e) => set({ notes: e.target.value })}
+            />
+
             <div className="form-grid-2">
               <div className="form-section">
                 <label className="form-label">Workspace</label>
@@ -109,10 +145,10 @@ export default function DashboardModal({ open, initial, onClose, onSave, onDelet
             </div>
 
             <div className="form-section">
-              <label className="form-label">Power BI report link (optional)</label>
+              <label className="form-label">Report / file link (optional)</label>
               <input
                 className="input"
-                placeholder="https://app.powerbi.com/groups/…"
+                placeholder="https://…"
                 value={form.url}
                 onChange={(e) => set({ url: e.target.value })}
               />

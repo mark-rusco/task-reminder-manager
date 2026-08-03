@@ -3177,6 +3177,45 @@ textarea.input {
   padding-top: 4px;
 }
 
+.dashboard-card-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dashboard-card-name-row h3 {
+  flex: 1;
+}
+
+.type-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.type-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+.dashboard-notes {
+  margin: 0;
+}
+
+.dashboard-notes-text {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-2);
+  white-space: pre-wrap;
+}
+
 /* ---------- Dashboard detail ---------- */
 
 .dashboard-detail {

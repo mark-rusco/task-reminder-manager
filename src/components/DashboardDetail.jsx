@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { ArrowLeft, ExternalLink, Pencil, Plus, Users, Calendar, StickyNote, Image as ImageIcon, CheckCheck } from 'lucide-react';
 import { DASHBOARD_STATUSES, dashboardStatusMeta } from '../utils/constants';
 import { formatDueDate } from '../utils/dates';
+import DashboardTypeIcon from './DashboardTypeIcon.jsx';
 
 export default function DashboardDetail({
   dashboard,
@@ -37,6 +38,7 @@ export default function DashboardDetail({
         <div>
           <div className="dashboard-detail-title-row">
             <h2>{dashboard.name}</h2>
+            <DashboardTypeIcon type={dashboard.type} showLabel />
             <span className="status-badge" style={{ background: `${sm.color}1f`, color: sm.color }}>
               <span className="chip-dot" style={{ background: sm.color }} />
               {sm.label}
@@ -50,7 +52,7 @@ export default function DashboardDetail({
         <div className="dashboard-detail-actions">
           {dashboard.url && (
             <a className="btn btn-primary" href={dashboard.url} target="_blank" rel="noreferrer">
-              <ExternalLink size={16} /> Open in Power BI
+              <ExternalLink size={16} /> Open link
             </a>
           )}
           {typeof onNewTask === 'function' && (
@@ -63,6 +65,15 @@ export default function DashboardDetail({
           </button>
         </div>
       </div>
+
+      {dashboard.notes && (
+        <section className="panel dashboard-notes">
+          <h3 className="panel-title">
+            <StickyNote size={15} /> Notes
+          </h3>
+          <p className="dashboard-notes-text">{dashboard.notes}</p>
+        </section>
+      )}
 
       <div className="dashboard-detail-panels">
         <section className="panel">

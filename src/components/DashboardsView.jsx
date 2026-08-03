@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Search, Plus, LayoutDashboard, ExternalLink, Pencil, Trash2, Link2, CalendarClock } from 'lucide-react';
-import { DASHBOARD_STATUSES, dashboardStatusMeta } from '../utils/constants';
+import { DASHBOARD_STATUSES, dashboardStatusMeta, dashboardTypeMeta } from '../utils/constants';
 import { formatDueDate, isOverdue } from '../utils/dates';
+import DashboardTypeIcon from './DashboardTypeIcon.jsx';
 
 export default function DashboardsView({
   dashboards,
@@ -41,7 +42,8 @@ export default function DashboardsView({
           ? true
           : d.name.toLowerCase().includes(q) ||
             (d.description || '').toLowerCase().includes(q) ||
-            (d.workspace || '').toLowerCase().includes(q),
+            (d.workspace || '').toLowerCase().includes(q) ||
+            dashboardTypeMeta(d.type).label.toLowerCase().includes(q),
       );
   }, [dashboards, filter, search]);
 
@@ -138,7 +140,10 @@ export default function DashboardsView({
               <article key={d.id} className="dashboard-card" onClick={() => onOpen(d.id)} role="button" tabIndex={0}>
                 <div className="dashboard-card-head">
                   <div className="dashboard-card-title">
-                    <h3>{d.name}</h3>
+                    <div className="dashboard-card-name-row">
+                      <DashboardTypeIcon type={d.type} size={16} />
+                      <h3>{d.name}</h3>
+                    </div>
                     {d.workspace && <span className="dashboard-workspace">{d.workspace}</span>}
                   </div>
                   <span className="status-badge" style={{ background: `${sm.color}1f`, color: sm.color }}>
