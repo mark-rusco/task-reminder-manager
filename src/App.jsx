@@ -110,10 +110,25 @@ function AppShell() {
   const [moreOpen, setMoreOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const searchRef = useRef(null);
+  const snoozeRef = useRef(null);
   const [tourStep, setTourStep] = useState(0);
   const [lockBypass, setLockBypass] = useState(false);
   const useLock = useAppLock();
   const TOUR_KEY = 'focusly-tour-done';
+
+  const openNewTask = useCallback((date, opts = {}) => {
+    setModal({
+      open: true,
+      initial: null,
+      defaultDate: date || todayStr(),
+      defaultDashboardIds: opts.dashboardIds || [],
+      defaultType: opts.type || 'task',
+    });
+  }, []);
+
+  const openEditTask = useCallback((task) => {
+    setModal({ open: true, initial: task, defaultDate: task.dueDate || todayStr() });
+  }, []);
 
   const onFire = useCallback(
     ({ title, body, taskId }) => {
@@ -122,16 +137,16 @@ function AppShell() {
       const task = tasks.find((t) => t.id === taskId);
       if (task) {
         pushToast(`${title} · ${body}`, 'success', [
-          { label: 'Snooze 10m', fn: () => snooze(task, 10) },
-          { label: 'Snooze 1h', fn: () => snooze(task, 60) },
-          { label: 'Later today', fn: () => snooze(task, 'later-today') },
+          { label: 'Snooze 10m', fn: () => snoozeRef.current(task, 10) },
+          { label: 'Snooze 1h', fn: () => snoozeRef.current(task, 60) },
+          { label: 'Later today', fn: () => snoozeRef.current(task, 'later-today') },
           { label: 'Open task', fn: () => openEditTask(task) },
         ]);
       } else {
         pushToast(`${title} · ${body}`, 'success');
       }
     },
-    [pushToast, snooze, tasks, openEditTask],
+    [pushToast, tasks, openEditTask],
   );
 
   const onTimerComplete = useCallback(() => {
@@ -140,6 +155,7 @@ function AppShell() {
   }, [pushToast]);
 
   const { prefs, requestPermission, toggleEnabled, snooze } = useNotifications({ tasks, now, onFire });
+  snoozeRef.current = snooze;
 
   // Mark reminders as fired once the notification hook signals it.
   useEffect(() => {
@@ -162,20 +178,6 @@ function AppShell() {
     setSearch('');
     setMoreOpen(false);
     window.scrollTo({ top: 0 });
-  }, []);
-
-  const openNewTask = useCallback((date, opts = {}) => {
-    setModal({
-      open: true,
-      initial: null,
-      defaultDate: date || todayStr(),
-      defaultDashboardIds: opts.dashboardIds || [],
-      defaultType: opts.type || 'task',
-    });
-  }, []);
-
-  const openEditTask = useCallback((task) => {
-    setModal({ open: true, initial: task, defaultDate: task.dueDate || todayStr() });
   }, []);
 
   const saveTask = useCallback(
