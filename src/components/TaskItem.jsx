@@ -1,7 +1,7 @@
 import { timeBucket, formatDueDate, isOverdue } from '../utils/dates';
 import { priorityMeta } from '../utils/constants';
 import { hasRecurrence, describeRecurrence } from '../utils/recurrence';
-import { Repeat2, Bell, Flag, Pencil, Trash2, Users, Link2, Image as ImageIcon, RefreshCw, Pin } from 'lucide-react';
+import { Flag, Pencil, Trash2, Link2, Image as ImageIcon, Pin } from 'lucide-react';
 
 export default function TaskItem({ task, labels, dashboards, now, onToggle, onEdit, onDelete, onOpenDashboard, onTogglePin }) {
   const bucket = timeBucket(task, now);
@@ -13,9 +13,31 @@ export default function TaskItem({ task, labels, dashboards, now, onToggle, onEd
   const isMeeting = task.taskType === 'meeting';
   const isRefresh = task.taskType === 'refresh';
   const linkedDashboards = (task.dashboardIds || []).map((id) => dashboards.find((d) => d.id === id)).filter(Boolean);
+  const workspaces = [...new Set(linkedDashboards.map((d) => d.workspace).filter(Boolean))];
 
   const dueClass =
     task.completed ? 'due-done' : overdue ? 'due-overdue' : bucket === 'today' ? 'due-today' : '';
+
+  const dueText = task.dueDate
+    ? formatDueDate(task.dueDate) + (task.dueTime ? ` · ${task.dueTime}` : '')
+    : '';
+  const recurText = recurring
+    ? describeRecurrence(task.recurrence).replace(/^Repeats /, '').replace(/^every /, 'Every ')
+    : '';
+
+  // Subtitle line 1: Pinned • Workspace
+  const subMain = [];
+  if (task.pinned) subMain.push('Pinned');
+  subMain.push(...workspaces);
+
+  // Subtitle line 2: Today • every weekday • Meeting
+  const subMeta = [];
+  if (dueText) subMeta.push(dueText);
+  if (recurText) subMeta.push(recurText);
+  if (isMeeting) subMeta.push('Meeting');
+  if (isRefresh) subMeta.push('Refresh');
+  if (hasReminder) subMeta.push('Reminder');
+  const subMetaRest = subMeta.filter((s) => s !== dueText);
 
   return (
     <li className={`task-item ${task.completed ? 'is-completed' : ''} ${task.pinned ? 'is-pinned' : ''} prio-${task.priority}`}>
@@ -45,38 +67,27 @@ export default function TaskItem({ task, labels, dashboards, now, onToggle, onEd
           }}
         >
           <div className="task-title-row">
-            {task.pinned && (
-              <span className="chip chip-pinned" title="Pinned — shown first on your next shift">
-                <Pin size={12} />
-                Pinned
-              </span>
-            )}
-            {isMeeting && (
-              <span className="chip chip-meeting" title="Meeting">
-                <Users size={12} />
-                Meeting
-              </span>
-            )}
-            {task.priority !== 'none' && task.priority !== 'low' && (
-              <Flag className="task-flag" size={14} style={{ color: prio.color }} aria-label={`${prio.label} priority`} />
+            {task.priority !== 'none' && (
+              <Flag className="task-flag" size={15} style={{ color: prio.color }} aria-label={`${prio.label} priority`} />
             )}
             <span className="task-title">{task.title}</span>
           </div>
 
-          {(task.notes || taskLabels.length || task.dueDate || recurring || hasReminder || linkedDashboards.length || isRefresh || task.meetingNotes || task.screenshot) && (
+          {(subMain.length > 0 || subMeta.length > 0) && (
+            <div className="task-sub">
+              {subMain.length > 0 && <span className="task-sub-line task-sub-main">{subMain.join(' • ')}</span>}
+              {subMeta.length > 0 && (
+                <span className="task-sub-line task-sub-meta">
+                  {dueText && <span className={`sub-due ${dueClass}`}>{dueText}</span>}
+                  {dueText && subMetaRest.length > 0 && <span className="sub-sep">{' • '}</span>}
+                  {subMetaRest.join(' • ')}
+                </span>
+              )}
+            </div>
+          )}
+
+          {(taskLabels.length || linkedDashboards.length || task.screenshot) && (
             <div className="task-meta">
-              {isRefresh && (
-                <span className="chip chip-refresh" title="Refresh task">
-                  <RefreshCw size={11} />
-                  Refresh
-                </span>
-              )}
-              {task.dueDate && (
-                <span className={`task-due ${dueClass}`}>
-                  {formatDueDate(task.dueDate)}
-                  {task.dueTime ? ` · ${task.dueTime}` : ''}
-                </span>
-              )}
               {linkedDashboards.map((d) => (
                 <a
                   key={d.id}
@@ -101,17 +112,6 @@ export default function TaskItem({ task, labels, dashboards, now, onToggle, onEd
                 <span className="chip chip-shot" title="Screenshot attached">
                   <ImageIcon size={11} />
                   Shot
-                </span>
-              )}
-              {recurring && (
-                <span className="chip chip-recur" title={describeRecurrence(task.recurrence)}>
-                  <Repeat2 size={11} />
-                  {describeRecurrence(task.recurrence).replace('Repeats ', '').replace('Repeats every ', 'Every ')}
-                </span>
-              )}
-              {hasReminder && (
-                <span className="chip chip-reminder" title="Reminder set">
-                  <Bell size={11} />
                 </span>
               )}
               {taskLabels.map((l) => (
