@@ -71,6 +71,7 @@ export const SNOOZE_KEY = 'snoozed';
 export const LILO_KEY = 'lilo';
 export const LILO_SUBMISSIONS_KEY = 'lilo-submissions';
 export const WORKSPACES_KEY = 'workspaces';
+export const TEAM_LEAVE_KEY = 'team-leave';
 /** Set once a user's tasks have been loaded/uploaded to the backend, so the
  *  app never re-seeds demo tasks for an established account (which would
  *  resurrect deleted tasks on refresh). */
@@ -102,4 +103,17 @@ export function liloDefaultStatus(dateISO) {
   const d = new Date(dateISO + 'T00:00:00');
   const day = d.getDay();
   return day === 0 || day === 6 ? 'Rest Day' : 'Scheduled';
+}
+
+// ---- Team Leave Tracker ----
+
+export const TEAM_LEAVE_REASONS = ['PTO', 'Sick', 'Training', 'Personal', 'Holiday', 'Other'];
+
+/** True if the leave window includes `todayISO` (a date string). */
+export function teamLeaveActive(leave, todayISO) {
+  const s = leave.startDate || leave.start_date;
+  const e = leave.endDate || leave.end_date;
+  if (!s) return false;
+  if (!e) return s <= todayISO;
+  return s <= todayISO && todayISO <= e;
 }

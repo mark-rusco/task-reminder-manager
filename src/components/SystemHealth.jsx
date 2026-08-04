@@ -8,6 +8,7 @@ const CHECKS = [
   { id: 'workspaces', label: 'Workspaces table', table: 'workspaces', column: 'name', migration: '0012_workspaces.sql' },
   { id: 'dashboard_types', label: 'Dashboard types (admin-managed)', table: 'dashboard_types', column: 'name', migration: '0010_dashboard_types.sql' },
   { id: 'dashboard_notes', label: 'Dashboard change log (notes)', table: 'dashboard_notes', column: 'content', migration: '0011_dashboard_notes.sql' },
+  { id: 'team_leave', label: 'Team leave tracker', table: 'team_leave', column: 'member', migration: '0014_team_leave.sql' },
 ];
 
 const FIX_SQL = {
@@ -16,6 +17,7 @@ const FIX_SQL = {
   '0012_workspaces.sql': '-- Create the workspaces table, RLS & realtime. See supabase/migrations/0012_workspaces.sql',
   '0010_dashboard_types.sql': '-- Create the dashboard_types table, RLS & seeds. See supabase/migrations/0010_dashboard_types.sql',
   '0011_dashboard_notes.sql': '-- Create the dashboard_notes table, RLS & realtime. See supabase/migrations/0011_dashboard_notes.sql',
+  '0014_team_leave.sql': '-- Create the team_leave table, RLS & realtime. See supabase/migrations/0014_team_leave.sql',
 };
 
 async function runCheck(c) {

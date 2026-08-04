@@ -16,7 +16,7 @@ const ALL_ACTIVE = new Set(['inbox', 'label', 'search']);
  * Todoist / Google Tasks. Desktop keeps the full sidebar for these views.
  */
 export default function TaskTabsBar({ activeView, activeLabel, labels, counts, onNavigate }) {
-  if (activeView.type === 'dashboards' || activeView.type === 'lilo' || activeView.type === 'tracker' || activeView.type === 'admin') {
+  if (activeView.type === 'dashboards' || activeView.type === 'lilo' || activeView.type === 'tracker' || activeView.type === 'teamleave' || activeView.type === 'reports' || activeView.type === 'calendar' || activeView.type === 'admin') {
     return null;
   }
   return (

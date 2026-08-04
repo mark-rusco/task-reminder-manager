@@ -8,6 +8,7 @@ import {
   CalendarRange,
   CalendarDays,
   BarChart3,
+  Users,
   Plus,
   MoreHorizontal,
   ExternalLink,
@@ -23,6 +24,7 @@ const NAV = [
   { id: 'calendar', label: 'Calendar', icon: CalendarDays },
   { id: 'lilo', label: 'LILO Tracker', icon: ClipboardList },
   { id: 'tracker', label: 'Leave & RTO', icon: CalendarRange },
+  { id: 'teamleave', label: 'Team Leave', icon: Users },
   { id: 'reports', label: 'Reports', icon: BarChart3 },
 ];
 

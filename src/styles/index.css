@@ -5590,3 +5590,305 @@ td.admin-th-actions {
     gap: 2px;
   }
 }
+
+/* ============================================================
+   Team Leave Tracker
+   ============================================================ */
+.team-leave-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tl-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.tl-stats {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.stat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.stat-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tl-members {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-bottom: 2px;
+}
+
+.tl-members-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-right: 4px;
+}
+
+.tl-name-chips {
+  margin-top: 8px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tl-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.tl-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  background: var(--surface);
+}
+
+.tl-card.active {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
+.tl-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tl-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary-soft);
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.tl-card-title {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tl-card-title strong {
+  font-size: 14.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tl-dates {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.tl-reason {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.tl-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--danger-soft);
+  color: var(--danger);
+  white-space: nowrap;
+}
+
+.tl-card-actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.tl-card-actions .icon-btn svg {
+  color: var(--text-3);
+}
+
+.tl-note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.45;
+}
+
+.tl-cover-block {
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tl-cover-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-2);
+}
+
+.tl-pending {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.tl-cover-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tl-cover-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 9px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+
+.tl-cover-list li.done {
+  opacity: 0.6;
+}
+
+.tl-cover-list li.done .tl-cover-title {
+  text-decoration: line-through;
+  color: var(--text-3);
+}
+
+.tl-cover-check {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 2px solid var(--border-strong);
+  background: transparent;
+  color: var(--primary-text);
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.tl-cover-check:hover {
+  border-color: var(--primary);
+}
+
+.tl-cover-list li.done .tl-cover-check {
+  background: var(--success);
+  border-color: var(--success);
+}
+
+.tl-cover-title {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tl-cover-state {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--success);
+}
+
+.tl-no-cover {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--text-3);
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
+
+.tl-cover-add {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tl-cover-add > :first-child {
+  display: flex;
+  gap: 8px;
+}
+
+.tl-custom-add {
+  display: flex;
+  gap: 8px;
+}
+
+.tl-custom-add .input,
+.tl-cover-add > :first-child .input {
+  flex: 1;
+}
+
+.tl-member-chip {
+  font-size: 12px;
+}
+
+@media (max-width: 480px) {
+  .tl-list {
+    grid-template-columns: 1fr;
+  }
+
+  .tl-card-head {
+    flex-wrap: wrap;
+  }
+}

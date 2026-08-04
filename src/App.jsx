@@ -40,6 +40,7 @@ import CalendarView from './components/CalendarView.jsx';
 import ReportsView from './components/ReportsView.jsx';
 import OnboardingTour from './components/OnboardingTour.jsx';
 import AppLock from './components/AppLock.jsx';
+import TeamLeaveView from './components/TeamLeaveView.jsx';
 import { SettingsProvider } from './context/SettingsContext.jsx';
 import { DashboardTypesProvider } from './context/DashboardTypesContext.jsx';
 
@@ -316,7 +317,9 @@ function AppShell() {
   const meta =
     activeView.type === 'reports'
       ? { title: 'Reports', subtitle: 'Completion trends & analytics' }
-      : activeView.type === 'calendar'
+      : activeView.type === 'teamleave'
+        ? { title: 'Team Leave', subtitle: 'Who is away and what needs covering' }
+        : activeView.type === 'calendar'
         ? { title: 'Calendar', subtitle: 'Month view of tasks & LILO schedule' }
         : activeView.type === 'dashboards'
           ? { title: 'Dashboards', subtitle: 'Power BI inventory & progress tracker' }
@@ -333,7 +336,8 @@ function AppShell() {
     activeView.type === 'tracker' ||
     activeView.type === 'admin' ||
     activeView.type === 'reports' ||
-    activeView.type === 'calendar'
+    activeView.type === 'calendar' ||
+    activeView.type === 'teamleave'
       ? meta.title
       : activeView.search
         ? 'Search results'
@@ -476,7 +480,7 @@ function AppShell() {
 
         <div
           className={`content ${
-            view.type === 'dashboards' || view.type === 'lilo' || view.type === 'tracker' || view.type === 'admin' || view.type === 'reports' || view.type === 'calendar'
+            view.type === 'dashboards' || view.type === 'lilo' || view.type === 'tracker' || view.type === 'admin' || view.type === 'reports' || view.type === 'calendar' || view.type === 'teamleave'
               ? 'content-wide'
               : ''
           }`}
@@ -500,6 +504,8 @@ function AppShell() {
               onOpenTask={openEditTask}
               onToggle={toggleComplete}
             />
+          ) : view.type === 'teamleave' ? (
+            <TeamLeaveView tasks={tasks} onToast={pushToast} />
           ) : view.type === 'lilo' ? (
             <LiloView
               entries={liloEntries}
@@ -575,7 +581,7 @@ function AppShell() {
         </div>
       </main>
 
-      {view.type !== 'lilo' && view.type !== 'tracker' && view.type !== 'admin' && view.type !== 'reports' && (
+      {view.type !== 'lilo' && view.type !== 'tracker' && view.type !== 'admin' && view.type !== 'reports' && view.type !== 'teamleave' && (
         <button
           className="fab"
           onClick={() => (view.type === 'dashboards' ? setDashboardModal({ open: true, initial: null }) : openNewTask(defaultDateForView))}
@@ -595,7 +601,7 @@ function AppShell() {
         onNewTask={() => openNewTask(defaultDateForView)}
         onNewBoard={() => setDashboardModal({ open: true, initial: null })}
         onSearch={() => {
-          setView((v) => (v.type === 'dashboards' || v.type === 'lilo' || v.type === 'tracker' || v.type === 'admin' || v.type === 'reports' || v.type === 'calendar' ? { type: 'inbox', labelId: null } : v));
+          setView((v) => (v.type === 'dashboards' || v.type === 'lilo' || v.type === 'tracker' || v.type === 'admin' || v.type === 'reports' || v.type === 'calendar' || v.type === 'teamleave' ? { type: 'inbox', labelId: null } : v));
           setSearch('');
           requestAnimationFrame(() => searchRef.current?.focus());
         }}
