@@ -1,15 +1,27 @@
 import { useEffect, useState } from 'react';
-import { X, Loader2, UserCog } from 'lucide-react';
+import { X, Loader2, UserCog, Fingerprint, LockKeyhole } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { useAppLock } from '../hooks/useAppLock';
 import { parseShiftSchedule, to24h, to12h } from '../utils/lilo';
 
 export default function ProfileModal({ open, onClose, onToast }) {
   const { user, profile, saveOwnCustomFields } = useAuth();
+  const lock = useAppLock();
+  const [armLock, setArmLock] = useState(false);
+  const [lockPin, setLockPin] = useState('');
+  const [lockPin2, setLockPin2] = useState('');
   const [fields, setFields] = useState(null);
   const [values, setValues] = useState({});
   const [range, setRange] = useState({});
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setArmLock(lock.enabled);
+    setLockPin('');
+    setLockPin2('');
+  }, [open, lock.enabled]);
 
   useEffect(() => {
     if (!open || !supabase) return;
@@ -81,6 +93,25 @@ export default function ProfileModal({ open, onClose, onToast }) {
     }
     onToast?.('Profile updated', 'success');
     onClose();
+  };
+
+  const toggleLock = () => {
+    if (lock.enabled) {
+      lock.disable();
+      onToast?.('App lock turned off', 'success');
+      return;
+    }
+    setArmLock((v) => !v);
+    setLockPin('');
+    setLockPin2('');
+  };
+
+  const saveLock = () => {
+    if (!/^\d{4,6}$/.test(lockPin)) return onToast?.('PIN must be 4–6 digits', 'warning');
+    if (lockPin !== lockPin2) return onToast?.('PINs do not match', 'warning');
+    lock.enable(lockPin);
+    setArmLock(true);
+    onToast?.('App lock enabled', 'success');
   };
 
   if (!open) return null;
@@ -208,6 +239,50 @@ export default function ProfileModal({ open, onClose, onToast }) {
           ) : (
             <div className="profile-fields">{fields.filter((f) => f.active !== false).map(renderField)}</div>
           )}
+
+          <div className="profile-lock">
+            <div className="panel-title">
+              <LockKeyhole size={15} /> App lock
+            </div>
+            <label className="admin-toggle">
+              <input type="checkbox" checked={lock.enabled || armLock} onChange={toggleLock} />
+              <span>
+                <strong>Require unlock to open Focusly</strong>
+                <small>
+                  Locks with a 4–6 digit PIN{lock.hasBio ? ' or your fingerprint' : ''} when the app is launched.
+                </small>
+              </span>
+            </label>
+            {!lock.enabled && armLock && (
+              <div className="lock-setup">
+                <input
+                  type="password"
+                  className="input"
+                  placeholder="New PIN (4–6 digits)"
+                  inputMode="numeric"
+                  value={lockPin}
+                  onChange={(e) => setLockPin(e.target.value.replace(/\D/g, ''))}
+                />
+                <input
+                  type="password"
+                  className="input"
+                  placeholder="Confirm PIN"
+                  inputMode="numeric"
+                  value={lockPin2}
+                  onChange={(e) => setLockPin2(e.target.value.replace(/\D/g, ''))}
+                />
+                <button type="button" className="btn btn-primary" onClick={saveLock}>
+                  {lock.hasBio && <Fingerprint size={15} />}
+                  Set lock
+                </button>
+              </div>
+            )}
+            {lock.enabled && lock.hasBio && (
+              <p className="form-hint">
+                <Fingerprint size={13} /> Biometric unlock is available on this device.
+              </p>
+            )}
+          </div>
 
           <div className="modal-actions">
             <button type="button" className="btn btn-secondary" onClick={onClose}>

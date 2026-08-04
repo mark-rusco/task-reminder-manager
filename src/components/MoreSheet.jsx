@@ -1,8 +1,10 @@
-import { ClipboardList, CalendarRange, Plus, X, ShieldCheck } from 'lucide-react';
+import { ClipboardList, CalendarRange, CalendarDays, BarChart3, Plus, X, ShieldCheck } from 'lucide-react';
 
 const SECONDARY = [
+  { id: 'calendar', label: 'Calendar', icon: CalendarDays },
   { id: 'lilo', label: 'LILO Tracker', icon: ClipboardList },
   { id: 'tracker', label: 'Leave & RTO', icon: CalendarRange },
+  { id: 'reports', label: 'Reports', icon: BarChart3 },
 ];
 
 /**

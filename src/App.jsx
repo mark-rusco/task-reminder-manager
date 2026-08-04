@@ -10,6 +10,9 @@ import { useAppConfig } from './hooks/useAppConfig';
 import { useAuth } from './context/AuthContext';
 import { useNotifications, showSystemNotification } from './hooks/useNotifications';
 import { playReminderBeep } from './utils/audio';
+import { downloadCSV, downloadJSON, todayStamp } from './utils/export';
+import { computeTrackers } from './utils/trackers';
+import { useAppLock } from './hooks/useAppLock';
 import FocusTimer from './components/FocusTimer.jsx';
 import AuthPage from './components/AuthPage.jsx';
 import { isDueToday, isOverdue, isDueTomorrow, isThisWeek, todayStr, greeting, shiftNow } from './utils/dates';
@@ -32,6 +35,11 @@ import LabelManager from './components/LabelManager.jsx';
 import ConfirmDialog from './components/ConfirmDialog.jsx';
 import ProfileModal from './components/ProfileModal.jsx';
 import Toasts from './components/Toasts.jsx';
+import ShiftStartBanner from './components/ShiftStartBanner.jsx';
+import CalendarView from './components/CalendarView.jsx';
+import ReportsView from './components/ReportsView.jsx';
+import OnboardingTour from './components/OnboardingTour.jsx';
+import AppLock from './components/AppLock.jsx';
 import { SettingsProvider } from './context/SettingsContext.jsx';
 import { DashboardTypesProvider } from './context/DashboardTypesContext.jsx';
 
@@ -102,14 +110,28 @@ function AppShell() {
   const [moreOpen, setMoreOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const searchRef = useRef(null);
+  const [tourStep, setTourStep] = useState(0);
+  const [lockBypass, setLockBypass] = useState(false);
+  const useLock = useAppLock();
+  const TOUR_KEY = 'focusly-tour-done';
 
   const onFire = useCallback(
-    ({ title, body }) => {
+    ({ title, body, taskId }) => {
       playReminderBeep();
       showSystemNotification(title, body);
-      pushToast(`${title} · ${body}`, 'success');
+      const task = tasks.find((t) => t.id === taskId);
+      if (task) {
+        pushToast(`${title} · ${body}`, 'success', [
+          { label: 'Snooze 10m', fn: () => snooze(task, 10) },
+          { label: 'Snooze 1h', fn: () => snooze(task, 60) },
+          { label: 'Later today', fn: () => snooze(task, 'later-today') },
+          { label: 'Open task', fn: () => openEditTask(task) },
+        ]);
+      } else {
+        pushToast(`${title} · ${body}`, 'success');
+      }
     },
-    [pushToast],
+    [pushToast, snooze, tasks, openEditTask],
   );
 
   const onTimerComplete = useCallback(() => {
@@ -117,7 +139,7 @@ function AppShell() {
     pushToast('Focus session complete — well done!', 'success');
   }, [pushToast]);
 
-  const { prefs, requestPermission, toggleEnabled } = useNotifications({ tasks, now, onFire });
+  const { prefs, requestPermission, toggleEnabled, snooze } = useNotifications({ tasks, now, onFire });
 
   // Mark reminders as fired once the notification hook signals it.
   useEffect(() => {
@@ -128,6 +150,11 @@ function AppShell() {
     window.addEventListener('focusly:markNotified', handler);
     return () => window.removeEventListener('focusly:markNotified', handler);
   }, [tasks, updateTask]);
+
+  // First-run onboarding tour.
+  useEffect(() => {
+    if (backend && session && !localStorage.getItem(TOUR_KEY)) setTourStep(1);
+  }, [backend, session, TOUR_KEY]);
 
   const navigate = useCallback((type, labelId = null) => {
     setView({ type, labelId });
@@ -273,21 +300,38 @@ function AppShell() {
     };
   }, [tasks, counts, todayNow]);
 
+  const reportsConfig = useMemo(() => {
+    const status = computeTrackers(liloEntries, todayNow.format('YYYY-MM'), trackerConfig);
+    return {
+      ...trackerConfig,
+      ptoUsed: status.ptoUsed,
+      ptoLimit: status.ptoEffectiveLimit,
+      sickUsed: status.sickUsed,
+      sickLimit: status.sickEffectiveLimit,
+    };
+  }, [liloEntries, todayNow, trackerConfig]);
+
   const meta =
-    activeView.type === 'dashboards'
-      ? { title: 'Dashboards', subtitle: 'Power BI inventory & progress tracker' }
-      : activeView.type === 'lilo'
-        ? { title: 'LILO Tracker', subtitle: 'Monthly leave-in / leave-out sheet' }
-        : activeView.type === 'tracker'
-          ? { title: 'Leave & RTO Tracker', subtitle: 'Office days vs your RTO and leave targets' }
-          : activeView.type === 'admin'
-            ? { title: 'Admin', subtitle: 'Users, roles & application configuration' }
-            : viewMeta(activeView.type === 'label' ? activeView : { type: activeView.search ? 'search' : activeView.type, labelId: null }, labels, todayNow);
+    activeView.type === 'reports'
+      ? { title: 'Reports', subtitle: 'Completion trends & analytics' }
+      : activeView.type === 'calendar'
+        ? { title: 'Calendar', subtitle: 'Month view of tasks & LILO schedule' }
+        : activeView.type === 'dashboards'
+          ? { title: 'Dashboards', subtitle: 'Power BI inventory & progress tracker' }
+          : activeView.type === 'lilo'
+            ? { title: 'LILO Tracker', subtitle: 'Monthly leave-in / leave-out sheet' }
+            : activeView.type === 'tracker'
+              ? { title: 'Leave & RTO Tracker', subtitle: 'Office days vs your RTO and leave targets' }
+              : activeView.type === 'admin'
+                ? { title: 'Admin', subtitle: 'Users, roles & application configuration' }
+                : viewMeta(activeView.type === 'label' ? activeView : { type: activeView.search ? 'search' : activeView.type, labelId: null }, labels, todayNow);
   const title =
     activeView.type === 'dashboards' ||
     activeView.type === 'lilo' ||
     activeView.type === 'tracker' ||
-    activeView.type === 'admin'
+    activeView.type === 'admin' ||
+    activeView.type === 'reports' ||
+    activeView.type === 'calendar'
       ? meta.title
       : activeView.search
         ? 'Search results'
@@ -424,16 +468,37 @@ function AppShell() {
         {!activeView.search && <TaskTabsBar activeView={activeView} activeLabel={view.labelId} labels={labels} counts={counts} onNavigate={navigate} />}
 
         {!activeView.search && view.type === 'today' && <StatsBar stats={stats} />}
+        {!activeView.search && view.type === 'today' && (
+          <ShiftStartBanner tasks={tasks} now={todayNow} profile={profile} onShowToday={() => navigate('today')} />
+        )}
 
         <div
           className={`content ${
-            view.type === 'dashboards' || view.type === 'lilo' || view.type === 'tracker' || view.type === 'admin'
+            view.type === 'dashboards' || view.type === 'lilo' || view.type === 'tracker' || view.type === 'admin' || view.type === 'reports' || view.type === 'calendar'
               ? 'content-wide'
               : ''
           }`}
         >
           <FocusTimer onComplete={onTimerComplete} />
-          {view.type === 'lilo' ? (
+          {view.type === 'reports' ? (
+            <ReportsView
+              tasks={tasks}
+              labels={labels}
+              dashboards={dashboards}
+              liloEntries={liloEntries}
+              trackerConfig={reportsConfig}
+              trackerMonth={todayNow.format('YYYY-MM')}
+            />
+          ) : view.type === 'calendar' ? (
+            <CalendarView
+              tasks={tasks}
+              liloEntries={liloEntries}
+              todayNow={todayNow}
+              onAddTask={(date) => openNewTask(date)}
+              onOpenTask={openEditTask}
+              onToggle={toggleComplete}
+            />
+          ) : view.type === 'lilo' ? (
             <LiloView
               entries={liloEntries}
               submissions={liloSubmissions}
@@ -508,7 +573,7 @@ function AppShell() {
         </div>
       </main>
 
-      {view.type !== 'lilo' && view.type !== 'tracker' && view.type !== 'admin' && (
+      {view.type !== 'lilo' && view.type !== 'tracker' && view.type !== 'admin' && view.type !== 'reports' && (
         <button
           className="fab"
           onClick={() => (view.type === 'dashboards' ? setDashboardModal({ open: true, initial: null }) : openNewTask(defaultDateForView))}
@@ -528,7 +593,7 @@ function AppShell() {
         onNewTask={() => openNewTask(defaultDateForView)}
         onNewBoard={() => setDashboardModal({ open: true, initial: null })}
         onSearch={() => {
-          setView((v) => (v.type === 'dashboards' || v.type === 'lilo' || v.type === 'tracker' || v.type === 'admin' ? { type: 'inbox', labelId: null } : v));
+          setView((v) => (v.type === 'dashboards' || v.type === 'lilo' || v.type === 'tracker' || v.type === 'admin' || v.type === 'reports' || v.type === 'calendar' ? { type: 'inbox', labelId: null } : v));
           setSearch('');
           requestAnimationFrame(() => searchRef.current?.focus());
         }}
@@ -602,11 +667,22 @@ function AppShell() {
       <Toasts
         toasts={toasts}
         onDismiss={dismissToast}
-        onAction={(t) => {
-          t.action?.fn?.();
+        onAction={(t, a) => {
+          (a?.fn || t?.action?.fn)?.();
           dismissToast(t.id);
         }}
       />
+
+      <OnboardingTour
+        step={tourStep}
+        onNext={setTourStep}
+        onClose={() => {
+          setTourStep(0);
+          localStorage.setItem(TOUR_KEY, '1');
+        }}
+      />
+
+      {useLock.locked && !lockBypass && <AppLock useLock={useLock} onClose={() => setLockBypass(true)} />}
       </div>
     </>
   );

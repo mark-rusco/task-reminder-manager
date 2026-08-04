@@ -170,8 +170,9 @@ export function useTasks() {
 
   const pushToast = useCallback((message, type = 'info', action = null) => {
     const id = ++toastSeq.current;
-    setToasts((prev) => [...prev, { id, message, type, action }]);
-    if (!action) {
+    const actions = action ? (Array.isArray(action) ? action : [action]) : null;
+    setToasts((prev) => [...prev, { id, message, type, actions }]);
+    if (!actions) {
       window.setTimeout(() => {
         setToasts((prev) => prev.filter((t) => t.id !== id));
       }, 4000);

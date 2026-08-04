@@ -12,7 +12,7 @@ const PRIMARY = [
 const TASK_VIEWS = new Set(['inbox', 'today', 'upcoming', 'completed', 'label', 'search']);
 
 /** Secondary views reachable through the "More" sheet. */
-const MORE_VIEWS = new Set(['lilo', 'tracker', 'admin']);
+const MORE_VIEWS = new Set(['calendar', 'lilo', 'tracker', 'reports', 'admin']);
 
 /**
  * Fixed bottom navigation bar, shown on mobile (≤960px) only.

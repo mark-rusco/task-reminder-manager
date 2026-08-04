@@ -77,8 +77,10 @@ export default function TrackerConfigModal({ open, config, onSave, onClose }) {
       overtimeAllowance: Math.max(0, Number(form.overtimeAllowance) || 0),
       ptoEnabled: form.ptoEnabled,
       ptoLimit: Math.max(0, Number(form.ptoLimit) || 0),
+      ptoOpening: Math.max(0, Number(form.ptoOpening) || 0),
       sickEnabled: form.sickEnabled,
       sickLimit: Math.max(0, Number(form.sickLimit) || 0),
+      sickOpening: Math.max(0, Number(form.sickOpening) || 0),
     });
   };
 
@@ -204,12 +206,20 @@ export default function TrackerConfigModal({ open, config, onSave, onClose }) {
                     label="PTO"
                     hint="Paid time off"
                   />
-                  <Stepper
-                    label="Limit"
-                    value={Number(form.ptoLimit) || 0}
-                    onChange={(v) => set({ ptoLimit: Math.max(0, v) })}
-                    disabled={!form.ptoEnabled}
-                  />
+                  <div className="stepper-group">
+                    <Stepper
+                      label="Limit"
+                      value={Number(form.ptoLimit) || 0}
+                      onChange={(v) => set({ ptoLimit: Math.max(0, v) })}
+                      disabled={!form.ptoEnabled}
+                    />
+                    <Stepper
+                      label="Opening"
+                      value={Number(form.ptoOpening) || 0}
+                      onChange={(v) => set({ ptoOpening: Math.max(0, v) })}
+                      disabled={!form.ptoEnabled}
+                    />
+                  </div>
                 </div>
 
                 <div className="leave-type-row">
@@ -219,12 +229,20 @@ export default function TrackerConfigModal({ open, config, onSave, onClose }) {
                     label="Sick Leave"
                     hint="Sick days"
                   />
-                  <Stepper
-                    label="Limit"
-                    value={Number(form.sickLimit) || 0}
-                    onChange={(v) => set({ sickLimit: Math.max(0, v) })}
-                    disabled={!form.sickEnabled}
-                  />
+                  <div className="stepper-group">
+                    <Stepper
+                      label="Limit"
+                      value={Number(form.sickLimit) || 0}
+                      onChange={(v) => set({ sickLimit: Math.max(0, v) })}
+                      disabled={!form.sickEnabled}
+                    />
+                    <Stepper
+                      label="Opening"
+                      value={Number(form.sickOpening) || 0}
+                      onChange={(v) => set({ sickOpening: Math.max(0, v) })}
+                      disabled={!form.sickEnabled}
+                    />
+                  </div>
                 </div>
               </div>
 

@@ -6,6 +6,8 @@ import {
   LayoutDashboard,
   ClipboardList,
   CalendarRange,
+  CalendarDays,
+  BarChart3,
   Plus,
   MoreHorizontal,
   ExternalLink,
@@ -18,8 +20,10 @@ const NAV = [
   { id: 'upcoming', label: 'Upcoming', icon: CalendarClock },
   { id: 'completed', label: 'Completed', icon: CheckCheck },
   { id: 'dashboards', label: 'Dashboards', icon: LayoutDashboard },
+  { id: 'calendar', label: 'Calendar', icon: CalendarDays },
   { id: 'lilo', label: 'LILO Tracker', icon: ClipboardList },
   { id: 'tracker', label: 'Leave & RTO', icon: CalendarRange },
+  { id: 'reports', label: 'Reports', icon: BarChart3 },
 ];
 
 export default function Sidebar({

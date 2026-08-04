@@ -23,8 +23,10 @@ export const DEFAULT_TRACKER_CONFIG = {
   overtimeAllowance: 60, // minutes past shift end that today's tasks stay pending
   ptoEnabled: true,
   ptoLimit: 12,
+  ptoOpening: 0,
   sickEnabled: true,
   sickLimit: 12,
+  sickOpening: 0,
 };
 
 export function normalizeConfig(cfg) {
@@ -41,8 +43,10 @@ export function normalizeConfig(cfg) {
     overtimeAllowance: Math.max(0, Number(c.overtimeAllowance) || d.overtimeAllowance),
     ptoEnabled: c.ptoEnabled ?? d.ptoEnabled,
     ptoLimit: Math.max(0, Number(c.ptoLimit) || d.ptoLimit),
+    ptoOpening: Math.max(0, Number(c.ptoOpening) || d.ptoOpening),
     sickEnabled: c.sickEnabled ?? d.sickEnabled,
     sickLimit: Math.max(0, Number(c.sickLimit) || d.sickLimit),
+    sickOpening: Math.max(0, Number(c.sickOpening) || d.sickOpening),
   };
 }
 
@@ -115,14 +119,18 @@ export function computeTrackers(entries, month, config) {
     rtoRemaining: cfg.rtoEnabled ? Math.max(0, rtoTarget - rtoGot) : 0,
     ptoUsed,
     ptoLimit: cfg.ptoLimit,
+    ptoOpening: cfg.ptoOpening,
+    ptoEffectiveLimit: cfg.ptoLimit + cfg.ptoOpening,
     ptoEnabled: cfg.ptoEnabled,
-    ptoOver: cfg.ptoEnabled ? ptoUsed > cfg.ptoLimit : false,
-    ptoRemaining: cfg.ptoEnabled ? Math.max(0, cfg.ptoLimit - ptoUsed) : 0,
+    ptoOver: cfg.ptoEnabled ? ptoUsed > cfg.ptoLimit + cfg.ptoOpening : false,
+    ptoRemaining: cfg.ptoEnabled ? Math.max(0, cfg.ptoLimit + cfg.ptoOpening - ptoUsed) : 0,
     sickUsed,
     sickLimit: cfg.sickLimit,
+    sickOpening: cfg.sickOpening,
+    sickEffectiveLimit: cfg.sickLimit + cfg.sickOpening,
     sickEnabled: cfg.sickEnabled,
-    sickOver: cfg.sickEnabled ? sickUsed > cfg.sickLimit : false,
-    sickRemaining: cfg.sickEnabled ? Math.max(0, cfg.sickLimit - sickUsed) : 0,
+    sickOver: cfg.sickEnabled ? sickUsed > cfg.sickLimit + cfg.sickOpening : false,
+    sickRemaining: cfg.sickEnabled ? Math.max(0, cfg.sickLimit + cfg.sickOpening - sickUsed) : 0,
   };
 }
 
@@ -134,10 +142,10 @@ export function describeAlert(status, monthLabel) {
     msgs.push(`RTO met for ${monthLabel}: ${status.rtoGot}/${status.rtoTarget} office ${status.rtoGot === 1 ? 'day' : 'days'}.`);
   }
   if (status.ptoEnabled && status.ptoOver) {
-    msgs.push(`PTO exceeded for ${periodLabel}: used ${status.ptoUsed}, limit ${status.ptoLimit}.`);
+    msgs.push(`PTO exceeded for ${periodLabel}: used ${status.ptoUsed}, limit ${status.ptoEffectiveLimit}.`);
   }
   if (status.sickEnabled && status.sickOver) {
-    msgs.push(`Sick leave exceeded for ${periodLabel}: used ${status.sickUsed}, limit ${status.sickLimit}.`);
+    msgs.push(`Sick leave exceeded for ${periodLabel}: used ${status.sickUsed}, limit ${status.sickEffectiveLimit}.`);
   }
   return msgs.join(' ');
 }

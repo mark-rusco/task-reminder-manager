@@ -89,20 +89,23 @@ export default function TrackersView({ entries, config, onUpdateConfig, onToast,
               <span className="tracker-badge">{status.ptoRemaining} left</span>
             )}
           </div>
-          <p className="tracker-card-note">Paid time off used this {periodLabel}</p>
+          <p className="tracker-card-note">
+            Paid time off used this {periodLabel}
+            {status.ptoOpening > 0 ? ` (opening +${status.ptoOpening})` : ''}
+          </p>
           <div className="tracker-number">
             <strong>{status.ptoUsed}</strong>
-            <span>/{status.ptoLimit} days</span>
+            <span>/{status.ptoEffectiveLimit} days</span>
           </div>
           <div className="dashboard-progress">
             <div className="dashboard-progress-track">
-              <div className="dashboard-progress-fill" style={{ width: `${pct(status.ptoUsed, status.ptoLimit)}%`, background: status.ptoOver ? 'var(--danger)' : 'var(--success)' }} />
+              <div className="dashboard-progress-fill" style={{ width: `${pct(status.ptoUsed, status.ptoEffectiveLimit)}%`, background: status.ptoOver ? 'var(--danger)' : 'var(--success)' }} />
             </div>
           </div>
           {!status.ptoEnabled ? (
             <p className="tracker-status muted">PTO tracking is off.</p>
           ) : status.ptoOver ? (
-            <p className="tracker-status over">Exceeded by {status.ptoUsed - status.ptoLimit}.</p>
+            <p className="tracker-status over">Exceeded by {status.ptoUsed - status.ptoEffectiveLimit}.</p>
           ) : (
             <p className="tracker-status">{status.ptoRemaining} days remaining.</p>
           )}
@@ -119,20 +122,23 @@ export default function TrackersView({ entries, config, onUpdateConfig, onToast,
               <span className="tracker-badge">{status.sickRemaining} left</span>
             )}
           </div>
-          <p className="tracker-card-note">Sick days this {periodLabel}</p>
+          <p className="tracker-card-note">
+            Sick days this {periodLabel}
+            {status.sickOpening > 0 ? ` (opening +${status.sickOpening})` : ''}
+          </p>
           <div className="tracker-number">
             <strong>{status.sickUsed}</strong>
-            <span>/{status.sickLimit} days</span>
+            <span>/{status.sickEffectiveLimit} days</span>
           </div>
           <div className="dashboard-progress">
             <div className="dashboard-progress-track">
-              <div className="dashboard-progress-fill" style={{ width: `${pct(status.sickUsed, status.sickLimit)}%`, background: status.sickOver ? 'var(--danger)' : 'var(--success)' }} />
+              <div className="dashboard-progress-fill" style={{ width: `${pct(status.sickUsed, status.sickEffectiveLimit)}%`, background: status.sickOver ? 'var(--danger)' : 'var(--success)' }} />
             </div>
           </div>
           {!status.sickEnabled ? (
             <p className="tracker-status muted">Sick leave tracking is off.</p>
           ) : status.sickOver ? (
-            <p className="tracker-status over">Exceeded by {status.sickUsed - status.sickLimit}.</p>
+            <p className="tracker-status over">Exceeded by {status.sickUsed - status.sickEffectiveLimit}.</p>
           ) : (
             <p className="tracker-status">{status.sickRemaining} days remaining.</p>
           )}
