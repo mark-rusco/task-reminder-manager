@@ -7,6 +7,7 @@ import { useDashboards } from './hooks/useDashboards';
 import { useLilo } from './hooks/useLilo';
 import { useTrackerConfig } from './hooks/useTrackerConfig';
 import { useAppConfig } from './hooks/useAppConfig';
+import { useTeamLeave } from './hooks/useTeamLeave';
 import { useAuth } from './context/AuthContext';
 import { useNotifications, showSystemNotification } from './hooks/useNotifications';
 import { playReminderBeep } from './utils/audio';
@@ -41,6 +42,7 @@ import ReportsView from './components/ReportsView.jsx';
 import OnboardingTour from './components/OnboardingTour.jsx';
 import AppLock from './components/AppLock.jsx';
 import TeamLeaveView from './components/TeamLeaveView.jsx';
+import TeamLeaveCard from './components/TeamLeaveCard.jsx';
 import { SettingsProvider } from './context/SettingsContext.jsx';
 import { DashboardTypesProvider } from './context/DashboardTypesContext.jsx';
 
@@ -91,6 +93,13 @@ function AppShell() {
   } = useLilo(pushToast);
   const { config: trackerConfig, updateConfig: updateTrackerConfig } = useTrackerConfig();
   const { config: appConfig } = useAppConfig();
+  const {
+    entries: teamLeave,
+    addLeave: addTeamLeave,
+    updateLeave: updateTeamLeave,
+    deleteLeave: deleteTeamLeave,
+    toggleCoverTask,
+  } = useTeamLeave(pushToast);
   const { isAdmin } = useAuth();
 
   // Shift-aware "now": keeps today's tasks pending through overnight shifts
@@ -155,7 +164,7 @@ function AppShell() {
     pushToast('Focus session complete — well done!', 'success');
   }, [pushToast]);
 
-  const { prefs, requestPermission, toggleEnabled, snooze } = useNotifications({ tasks, now, onFire });
+  const { prefs, requestPermission, toggleEnabled, snooze } = useNotifications({ tasks, now, onFire, teamLeaves: teamLeave });
   snoozeRef.current = snooze;
 
   // Mark reminders as fired once the notification hook signals it.
@@ -478,6 +487,10 @@ function AppShell() {
           <ShiftStartBanner tasks={tasks} now={todayNow} profile={profile} onShowToday={() => navigate('today')} />
         )}
 
+        {!activeView.search && (view.type === 'today' || view.type === 'inbox') && (
+          <TeamLeaveCard entries={teamLeave} onOpen={() => navigate('teamleave')} />
+        )}
+
         <div
           className={`content ${
             view.type === 'dashboards' || view.type === 'lilo' || view.type === 'tracker' || view.type === 'admin' || view.type === 'reports' || view.type === 'calendar' || view.type === 'teamleave'
@@ -505,7 +518,16 @@ function AppShell() {
               onToggle={toggleComplete}
             />
           ) : view.type === 'teamleave' ? (
-            <TeamLeaveView tasks={tasks} onToast={pushToast} />
+            <TeamLeaveView
+              tasks={tasks}
+              entries={teamLeave}
+              onToast={pushToast}
+              onAdd={addTeamLeave}
+              onUpdate={updateTeamLeave}
+              onDelete={deleteTeamLeave}
+              onToggleCover={toggleCoverTask}
+              onToggleTask={toggleComplete}
+            />
           ) : view.type === 'lilo' ? (
             <LiloView
               entries={liloEntries}

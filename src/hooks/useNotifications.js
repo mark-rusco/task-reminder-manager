@@ -25,7 +25,7 @@ function nextAtHour(hour = 16) {
   return d.getTime();
 }
 
-export function useNotifications({ tasks, now, onFire }) {
+export function useNotifications({ tasks, now, onFire, teamLeaves }) {
   const { settings, setSetting } = useSettings();
   const prefs = settings.notifications || { enabled: false, granted: false };
   const [snoozes, setSnoozes] = useState([]);
@@ -138,6 +138,25 @@ export function useNotifications({ tasks, now, onFire }) {
     }
     setSnoozes((prev) => prev.filter((s) => s.at > nowMs));
   }, [now, snoozes, onFire]);
+
+  // ---- Team-leave reminders: fire once on the day a teammate's leave starts ----
+  const leaveNotifiedRef = useRef({});
+  useEffect(() => {
+    if (!prefs.enabled) return;
+    const today = now.format('YYYY-MM-DD');
+    const seen = leaveNotifiedRef.current;
+    // Drop flags from previous days so renewed leaves can remind again.
+    for (const k of Object.keys(seen)) {
+      if (seen[k] !== today) delete seen[k];
+    }
+    for (const lv of teamLeaves || []) {
+      if (!lv.startDate || lv.startDate !== today) continue;
+      const key = `${lv.id}:${today}`;
+      if (seen[key]) continue;
+      seen[key] = today;
+      onFire({ title: `${lv.member} is on leave today`, body: 'Check what needs to be covered.' });
+    }
+  }, [teamLeaves, now, prefs.enabled, onFire]);
 
   /** Snooze a task reminder for `minutes` (or "later today"). */
   const snooze = useCallback(

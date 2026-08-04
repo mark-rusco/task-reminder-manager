@@ -43,7 +43,7 @@ export default function TeamLeaveModal({ open, memberNames, tasks, initial, onSa
   const addFromTasks = () => {
     if (!pickId) return;
     const t = (tasks || []).find((x) => x.id === pickId);
-    if (t) setCoverTasks((prev) => [...prev, { id: t.id, title: t.title, done: false }]);
+    if (t) setCoverTasks((prev) => [...prev, { id: t.id, title: t.title, done: false, linked: true }]);
     setPickId('');
   };
 
@@ -151,7 +151,7 @@ export default function TeamLeaveModal({ open, memberNames, tasks, initial, onSa
               <label className="form-label">
                 <CheckSquare size={13} /> Tasks to cover
               </label>
-              <p className="form-hint">Things to pick up while this member is away. Tick them in the list to show they&apos;re covered.</p>
+              <p className="form-hint">Things to pick up while this member is away. Tasks added from your list are linked — ticking them covered also completes them in your task list.</p>
 
               {coverTasks.length > 0 && (
                 <ul className="tl-cover-list">

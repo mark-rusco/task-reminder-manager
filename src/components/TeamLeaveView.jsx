@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Users, Plus, Pencil, Trash2, CalendarCheck, CheckSquare, UserRound, CalendarDays } from 'lucide-react';
-import { useTeamLeave } from '../hooks/useTeamLeave';
-import { TEAM_LEAVE_REASONS, teamLeaveActive } from '../utils/constants';
+import { Users, Plus, Pencil, Trash2, CalendarCheck, CheckSquare, UserRound, CalendarDays, Link2 } from 'lucide-react';
+import { teamLeaveActive } from '../utils/constants';
 import TeamLeaveModal from './TeamLeaveModal.jsx';
 
 const reasonColor = {
@@ -13,34 +12,66 @@ const reasonColor = {
   Other: '#94a3b8',
 };
 
+export const TABS = [
+  { id: 'today', label: 'On leave today' },
+  { id: 'upcoming', label: 'Upcoming' },
+  { id: 'inactive', label: 'Inactive' },
+];
+
 function fmtDate(iso) {
   if (!iso) return '';
   const d = new Date(iso + 'T00:00:00');
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-export default function TeamLeaveView({ tasks, onToast }) {
-  const { entries, addLeave, updateLeave, deleteLeave, toggleCoverTask, uniqueMembers } = useTeamLeave(onToast);
+/** Categorize one record: 'today' (active now), 'upcoming', or 'inactive'. */
+export function classifyLeave(e, todayISO) {
+  if (teamLeaveActive(e, todayISO)) return 'today';
+  if (e.startDate && e.startDate > todayISO) return 'upcoming';
+  return 'inactive';
+}
+
+export default function TeamLeaveView({ tasks, entries, onToast, onAdd, onUpdate, onDelete, onToggleCover, onToggleTask }) {
   const [modal, setModal] = useState({ open: false, editing: null });
+  const [tab, setTab] = useState('today');
   const todayISO = new Date().toISOString().slice(0, 10);
 
-  const memberNames = useMemo(() => uniqueMembers(), [uniqueMembers, entries]);
+  const memberNames = useMemo(() => {
+    const seen = new Set();
+    return entries.filter((e) => !seen.has(e.member.toLowerCase()) && seen.add(e.member.toLowerCase())).map((e) => e.member);
+  }, [entries]);
+
+  const counts = useMemo(() => {
+    const c = { today: 0, upcoming: 0, inactive: 0 };
+    for (const e of entries) c[classifyLeave(e, todayISO)]++;
+    return c;
+  }, [entries, todayISO]);
+
+  const list = useMemo(
+    () =>
+      entries
+        .filter((e) => classifyLeave(e, todayISO) === tab)
+        .sort((a, b) => String(b.startDate || '').localeCompare(String(a.startDate || ''))),
+    [entries, tab, todayISO],
+  );
 
   const stats = useMemo(() => {
     const active = entries.filter((e) => teamLeaveActive(e, todayISO));
     const toCover = active.reduce((n, e) => n + (e.coverTasks || []).filter((c) => !c.done).length, 0);
-    const totalCover = entries.reduce((n, e) => n + (e.coverTasks || []).length, 0);
-    return { onLeave: active.length, toCover, totalCover };
+    return { onLeave: active.length, toCover };
   }, [entries, todayISO]);
 
-  const sorted = useMemo(
-    () => [...entries].sort((a, b) => String(b.startDate || '').localeCompare(String(a.startDate || ''))),
-    [entries],
-  );
+  const isLinked = (item) => !!(item.linked && (tasks || []).some((t) => t.id === item.id));
+
+  const toggleCover = (leaveId, item) => {
+    onToggleCover(leaveId, item.id);
+    // Auto-complete the linked task when the cover item is checked off.
+    if (!item.done && isLinked(item) && onToggleTask) onToggleTask(item.id);
+  };
 
   const remove = (e) => {
     if (!window.confirm(`Remove ${e.member}'s leave record?`)) return;
-    deleteLeave(e.id);
+    onDelete(e.id);
     onToast?.('Leave record removed', 'success');
   };
 
@@ -48,7 +79,7 @@ export default function TeamLeaveView({ tasks, onToast }) {
     <div className="team-leave-page">
       <div className="tl-toolbar">
         <div className="tl-stats">
-          <span className="stat-chip"><span className="stat-dot" style={{ background: 'var(--primary)' }} /> {stats.onLeave} on leave now</span>
+          <span className="stat-chip"><span className="stat-dot" style={{ background: 'var(--primary)' }} /> {stats.onLeave} on leave today</span>
           <span className="stat-chip"><span className="stat-dot" style={{ background: stats.toCover ? 'var(--warning)' : 'var(--success)' }} /> {stats.toCover} cover task{stats.toCover !== 1 ? 's' : ''} pending</span>
         </div>
         <button type="button" className="btn btn-primary" onClick={() => setModal({ open: true, editing: null })}>
@@ -65,18 +96,42 @@ export default function TeamLeaveView({ tasks, onToast }) {
         </div>
       )}
 
-      {sorted.length === 0 ? (
+      <div className="tl-tabs" role="tablist" aria-label="Team leave scope">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={tab === t.id}
+            className={`tl-tab ${tab === t.id ? 'active' : ''}`}
+            onClick={() => setTab(t.id)}
+          >
+            {t.label}
+            {counts[t.id] > 0 && <span className="tl-tab-count">{counts[t.id]}</span>}
+          </button>
+        ))}
+      </div>
+
+      {list.length === 0 ? (
         <div className="empty-state">
           <div className="empty-icon"><CalendarCheck size={30} /></div>
-          <h3>No team leave logged</h3>
-          <p>Log a team member&apos;s leave and add the tasks you&apos;ll need to cover while they&apos;re away.</p>
-          <button type="button" className="btn btn-primary" onClick={() => setModal({ open: true, editing: null })}>
-            <Plus size={15} /> Log team leave
-          </button>
+          <h3>Nothing here</h3>
+          <p>
+            {tab === 'today'
+              ? 'No one in your team is on leave today. Nice and quiet.'
+              : tab === 'upcoming'
+                ? 'No upcoming leave logged yet.'
+                : 'No past leave records yet.'}
+          </p>
+          {tab !== 'inactive' && (
+            <button type="button" className="btn btn-primary" onClick={() => setModal({ open: true, editing: null })}>
+              <Plus size={15} /> Log team leave
+            </button>
+          )}
         </div>
       ) : (
         <div className="tl-list">
-          {sorted.map((e) => {
+          {list.map((e) => {
             const active = teamLeaveActive(e, todayISO);
             const pending = (e.coverTasks || []).filter((c) => !c.done);
             const rc = reasonColor[e.reason] || (e.reason ? '#94a3b8' : 'transparent');
@@ -112,20 +167,21 @@ export default function TeamLeaveView({ tasks, onToast }) {
                     </div>
                     <ul className="tl-cover-list">
                       {(e.coverTasks || []).map((c) => (
-                      <li key={c.id} className={c.done ? 'done' : ''}>
-                        <button
-                          type="button"
-                          className="tl-cover-check"
-                          onClick={() => toggleCoverTask(e.id, c.id)}
-                          aria-label={c.done ? 'Mark not covered' : 'Mark covered'}
-                        >
-                          {c.done ? '✓' : ''}
-                        </button>
-                        <span className="tl-cover-title">{c.title}</span>
-                        <span className="tl-cover-state">{c.done ? 'covered' : ''}</span>
-                      </li>
-                    ))}
-                  </ul>
+                        <li key={c.id} className={c.done ? 'done' : ''}>
+                          <button
+                            type="button"
+                            className="tl-cover-check"
+                            onClick={() => toggleCover(e.id, c)}
+                            aria-label={c.done ? 'Mark not covered' : 'Mark covered'}
+                          >
+                            {c.done ? '✓' : ''}
+                          </button>
+                          {isLinked(c) && <Link2 size={12} className="tl-link-icon" aria-label="Linked to your task list" />}
+                          <span className="tl-cover-title">{c.title}</span>
+                          <span className="tl-cover-state">{c.done ? 'covered' : ''}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 ) : (
                   <p className="tl-no-cover">No tasks added to cover — tap Edit to add some.</p>
@@ -143,10 +199,10 @@ export default function TeamLeaveView({ tasks, onToast }) {
         tasks={tasks}
         onSave={(data) => {
           if (modal.editing) {
-            updateLeave(modal.editing.id, data);
+            onUpdate(modal.editing.id, data);
             onToast?.(`${data.member}'s leave updated`, 'success');
           } else {
-            addLeave(data);
+            onAdd(data);
             onToast?.(`${data.member}'s leave added`, 'success');
           }
           setModal({ open: false, editing: null });
