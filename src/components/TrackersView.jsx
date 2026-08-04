@@ -145,7 +145,16 @@ export default function TrackersView({ entries, config, onUpdateConfig, onToast,
         </section>
       </div>
 
-      <TrackerConfigModal open={configOpen} config={config} onSave={onUpdateConfig} onClose={() => setConfigOpen(false)} />
+      <TrackerConfigModal
+        open={configOpen}
+        config={config}
+        onSave={(cfg) => {
+          onUpdateConfig(cfg);
+          onToast?.('Tracker settings saved', 'success');
+          setConfigOpen(false);
+        }}
+        onClose={() => setConfigOpen(false)}
+      />
     </div>
   );
 }
