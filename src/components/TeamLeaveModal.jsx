@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { X, Plus, UserRound, Users, CheckSquare } from 'lucide-react';
+import { X, Plus, UserRound, Users, CheckSquare, Sparkles } from 'lucide-react';
 import { TEAM_LEAVE_REASONS, uid } from '../utils/constants';
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
-export default function TeamLeaveModal({ open, memberNames, tasks, initial, onSave, onClose }) {
+export default function TeamLeaveModal({ open, memberNames, tasks, initial, defaultMember, onSave, onClose, onAddTaskFor }) {
   const [member, setMember] = useState('');
   const [startDate, setStartDate] = useState(todayISO());
   const [endDate, setEndDate] = useState('');
@@ -24,7 +24,7 @@ export default function TeamLeaveModal({ open, memberNames, tasks, initial, onSa
       setNote(initial.note || '');
       setCoverTasks(initial.coverTasks || []);
     } else {
-      setMember('');
+      setMember(defaultMember || '');
       setStartDate(todayISO());
       setEndDate('');
       setReason('PTO');
@@ -33,12 +33,28 @@ export default function TeamLeaveModal({ open, memberNames, tasks, initial, onSa
     }
     setPickId('');
     setCustomTitle('');
-  }, [open, initial]);
+  }, [open, initial, defaultMember]);
 
   if (!open) return null;
 
   const known = memberNames || [];
   const taskOptions = (tasks || []).filter((t) => !coverTasks.some((c) => c.id === t.id));
+
+  // Open tasks assigned to the typed member — auto-listed so the user just
+  // ticks the ones they need to cover. Matches on name, case-insensitively.
+  const name = member.trim();
+  const suggested = (tasks || []).filter(
+    (t) => t.assignedMember && !t.completed && t.assignedMember.toLowerCase() === name.toLowerCase(),
+  );
+  const isSuggestedCover = (id) => coverTasks.some((c) => c.id === id);
+
+  const toggleSuggested = (t) => {
+    if (isSuggestedCover(t.id)) {
+      removeCover(t.id);
+    } else {
+      setCoverTasks((prev) => [...prev, { id: t.id, title: t.title, done: false, linked: true }]);
+    }
+  };
 
   const addFromTasks = () => {
     if (!pickId) return;
@@ -152,6 +168,53 @@ export default function TeamLeaveModal({ open, memberNames, tasks, initial, onSa
                 <CheckSquare size={13} /> Tasks to cover
               </label>
               <p className="form-hint">Things to pick up while this member is away. Tasks added from your list are linked — ticking them covered also completes them in your task list.</p>
+
+              {name && suggested.length > 0 && (
+                <div className="tl-suggest-block">
+                  <div className="tl-cover-label">
+                    <Sparkles size={13} /> Auto-listed — {name}&apos;s assigned tasks
+                    {suggested.filter((t) => !isSuggestedCover(t.id)).length > 0 && (
+                      <span className="tl-pending">{suggested.filter((t) => !isSuggestedCover(t.id)).length} to pick</span>
+                    )}
+                  </div>
+                  <p className="form-hint">
+                    These are your open tasks assigned to {name}. Tick the ones you&apos;ll cover — they&apos;re linked to your task list.
+                  </p>
+                  <ul className="tl-cover-list">
+                    {suggested.map((t) => (
+                      <li key={t.id} className={isSuggestedCover(t.id) ? 'added' : ''}>
+                        <button
+                          type="button"
+                          className="tl-cover-check"
+                          aria-label={isSuggestedCover(t.id) ? 'Remove from cover' : 'Add to cover'}
+                          aria-pressed={isSuggestedCover(t.id)}
+                          onClick={() => toggleSuggested(t)}
+                        >
+                          {isSuggestedCover(t.id) ? '✓' : ''}
+                        </button>
+                        <span className="tl-cover-title">{t.title}</span>
+                        <span className="tl-cover-state">
+                          {isSuggestedCover(t.id) ? 'added' : <span className="tl-cover-hint">tap to add</span>}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  {onAddTaskFor && (
+                    <button type="button" className="tl-new-task-link" onClick={() => onAddTaskFor(name)}>
+                      <Plus size={13} /> New task for {name}
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {name && suggested.length === 0 && onAddTaskFor && (
+                <div className="tl-suggest-empty">
+                  <span>No open tasks assigned to {name} yet.</span>
+                  <button type="button" className="tl-new-task-link" onClick={() => onAddTaskFor(name)}>
+                    <Plus size={13} /> Add task for {name}
+                  </button>
+                </div>
+              )}
 
               {coverTasks.length > 0 && (
                 <ul className="tl-cover-list">

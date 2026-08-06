@@ -171,12 +171,26 @@ export function useTeamLeave(onToast) {
     return entriesRef.current.filter((e) => !seen.has(e.member.toLowerCase()) && seen.add(e.member.toLowerCase())).map((e) => e.member);
   }, []);
 
+  /** Replace a leave record's cover list (add/remove items) and sync. */
+  const replaceCoverTasks = useCallback(
+    (leaveId, coverTasks) => {
+      setEntries((prev) => prev.map((e) => (e.id === leaveId ? { ...e, coverTasks } : e)));
+      if (backend) {
+        supabase.from('team_leave').update({ cover_tasks: coverTasks }).eq('id', leaveId).then(({ error }) => {
+          if (error) push(`Couldn't update cover list: ${error.message}`);
+        });
+      }
+    },
+    [backend, push],
+  );
+
   return {
     entries,
     addLeave,
     updateLeave,
     deleteLeave,
     toggleCoverTask,
+    replaceCoverTasks,
     uniqueMembers,
   };
 }
