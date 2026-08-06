@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { X, Trash2, Settings2 } from 'lucide-react';
 import { DASHBOARD_STATUSES } from '../utils/constants';
-import { useDashboardTypes } from '../context/DashboardTypesContext';
+import { useDashboardCategories } from '../context/DashboardCategoriesContext';
 import { useWorkspaces } from '../hooks/useWorkspaces';
-import DashboardTypeIcon from './DashboardTypeIcon.jsx';
+import DashboardCategoryIcon from './DashboardCategoryIcon.jsx';
 
 const EMPTY = {
   name: '',
@@ -13,12 +13,12 @@ const EMPTY = {
   status: 'planning',
   progress: 0,
   dueDate: '',
-  type: 'powerbi',
+  category: 'dashboard',
   notes: '',
 };
 
 export default function DashboardModal({ open, initial, onClose, onSave, onDelete, onToast }) {
-  const { types } = useDashboardTypes();
+  const { categories } = useDashboardCategories();
   const { workspaces, addWorkspace, deleteWorkspace } = useWorkspaces(onToast);
   const [form, setForm] = useState(EMPTY);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -49,7 +49,7 @@ export default function DashboardModal({ open, initial, onClose, onSave, onDelet
           status: initial.status || 'planning',
           progress: Number(initial.progress) || 0,
           dueDate: initial.dueDate || '',
-          type: initial.type || 'powerbi',
+          category: initial.category || 'dashboard',
           notes: initial.notes || '',
         });
       } else {
@@ -82,7 +82,7 @@ export default function DashboardModal({ open, initial, onClose, onSave, onDelet
       status: form.status,
       progress: Number(form.progress),
       dueDate: form.dueDate || null,
-      type: form.type,
+      category: form.category,
       notes: form.notes.trim(),
     });
   };
@@ -115,20 +115,20 @@ export default function DashboardModal({ open, initial, onClose, onSave, onDelet
             />
 
             <div className="form-section">
-              <label className="form-label">Type</label>
+              <label className="form-label">Category</label>
               <div className="type-row">
-                {types.map((t) => {
-                  const on = form.type === t.value;
+                {categories.map((c) => {
+                  const on = form.category === c.value;
                   return (
                     <button
-                      key={t.value}
+                      key={c.value}
                       type="button"
                       className={`chip chip-btn ${on ? 'on' : ''}`}
-                      style={on ? { borderColor: t.color, color: t.color, background: `${t.color}1f` } : undefined}
-                      onClick={() => set({ type: t.value })}
+                      style={on ? { borderColor: c.color, color: c.color, background: `${c.color}1f` } : undefined}
+                      onClick={() => set({ category: c.value })}
                     >
-                      <DashboardTypeIcon type={t.value} size={13} />
-                      {t.label}
+                      <DashboardCategoryIcon category={c.value} size={13} />
+                      {c.label}
                     </button>
                   );
                 })}

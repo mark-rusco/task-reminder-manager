@@ -23,6 +23,7 @@ import UserMenu from './components/UserMenu.jsx';
 import MoreSheet from './components/MoreSheet.jsx';
 import Header, { viewMeta } from './components/Header.jsx';
 import TaskTabsBar from './components/TaskTabsBar.jsx';
+import CategoryBar from './components/CategoryBar.jsx';
 import StatsBar from './components/StatsBar.jsx';
 import TaskList from './components/TaskList.jsx';
 import TaskModal from './components/TaskModal.jsx';
@@ -44,14 +45,14 @@ import AppLock from './components/AppLock.jsx';
 import TeamLeaveView from './components/TeamLeaveView.jsx';
 import TeamLeaveCard from './components/TeamLeaveCard.jsx';
 import { SettingsProvider } from './context/SettingsContext.jsx';
-import { DashboardTypesProvider } from './context/DashboardTypesContext.jsx';
+import { DashboardCategoriesProvider } from './context/DashboardCategoriesContext.jsx';
 
 export default function App() {
   return (
     <SettingsProvider>
-      <DashboardTypesProvider>
+      <DashboardCategoriesProvider>
         <AppShell />
-      </DashboardTypesProvider>
+      </DashboardCategoriesProvider>
     </SettingsProvider>
   );
 }
@@ -99,8 +100,11 @@ function AppShell() {
     updateLeave: updateTeamLeave,
     deleteLeave: deleteTeamLeave,
     toggleCoverTask,
+    replaceCoverTasks: replaceTeamLeaveCover,
+    uniqueMembers,
   } = useTeamLeave(pushToast);
   const { isAdmin } = useAuth();
+  const memberNames = useMemo(() => uniqueMembers(), [uniqueMembers]);
 
   // Shift-aware "now": keeps today's tasks pending through overnight shifts
   // plus the configured overtime allowance (Tracker settings).
@@ -108,11 +112,13 @@ function AppShell() {
     () => shiftNow(now, profile?.custom_fields?.shift_schedule, trackerConfig.overtimeAllowance),
     [now, profile, trackerConfig.overtimeAllowance],
   );
+  const shiftToday = todayNow.format('YYYY-MM-DD');
+  const nextShiftDay = todayNow.add(1, 'day').format('YYYY-MM-DD');
 
-  const [view, setView] = useState({ type: 'inbox', labelId: null });
+  const [view, setView] = useState({ type: 'inbox', labelIds: [] });
   const [search, setSearch] = useState('');
 
-  const [modal, setModal] = useState({ open: false, initial: null, defaultDate: todayStr(), defaultDashboardIds: [], defaultType: 'task' });
+  const [modal, setModal] = useState({ open: false, initial: null, defaultDate: todayStr(), defaultDashboardIds: [], defaultType: 'task', defaultMember: null });
   const [dashboardModal, setDashboardModal] = useState({ open: false, initial: null });
   const [selectedDashboardId, setSelectedDashboardId] = useState(null);
   const [labelManagerOpen, setLabelManagerOpen] = useState(false);
@@ -133,6 +139,7 @@ function AppShell() {
       defaultDate: date || todayStr(),
       defaultDashboardIds: opts.dashboardIds || [],
       defaultType: opts.type || 'task',
+      defaultMember: opts.member || null,
     });
   }, []);
 
@@ -182,8 +189,11 @@ function AppShell() {
     if (backend && session && !localStorage.getItem(TOUR_KEY)) setTourStep(1);
   }, [backend, session, TOUR_KEY]);
 
-  const navigate = useCallback((type, labelId = null) => {
-    setView({ type, labelId });
+  const navigate = useCallback((type, labelIds = null) => {
+    setView({
+      type,
+      labelIds: labelIds ? (Array.isArray(labelIds) ? labelIds : [labelIds]) : [],
+    });
     setSelectedDashboardId(null);
     setSearch('');
     setMoreOpen(false);
@@ -199,14 +209,14 @@ function AppShell() {
         addTask(data);
         pushToast('Task added', 'success');
       }
-      setModal({ open: false, initial: null, defaultDate: todayStr() });
+      setModal({ open: false, initial: null, defaultDate: todayStr(), defaultMember: null });
     },
     [modal.initial, addTask, updateTask, pushToast],
   );
 
   const removeTask = useCallback(
     (id) => {
-      setModal({ open: false, initial: null, defaultDate: todayStr() });
+      setModal({ open: false, initial: null, defaultDate: todayStr(), defaultMember: null });
       deleteTask(id);
     },
     [deleteTask],
@@ -215,7 +225,7 @@ function AppShell() {
   const openDashboard = useCallback(
     (id) => {
       setSelectedDashboardId(id);
-      setView({ type: 'dashboards', labelId: null });
+      setView({ type: 'dashboards', labelIds: [] });
       window.scrollTo({ top: 0 });
     },
     [],
@@ -338,7 +348,7 @@ function AppShell() {
               ? { title: 'Leave & RTO Tracker', subtitle: 'Office days vs your RTO and leave targets' }
               : activeView.type === 'admin'
                 ? { title: 'Admin', subtitle: 'Users, roles & application configuration' }
-                : viewMeta(activeView.type === 'label' ? activeView : { type: activeView.search ? 'search' : activeView.type, labelId: null }, labels, todayNow);
+                : viewMeta(activeView.search ? { type: 'search' } : activeView, todayNow);
   const title =
     activeView.type === 'dashboards' ||
     activeView.type === 'lilo' ||
@@ -406,14 +416,9 @@ function AppShell() {
       <div className="app">
         <Sidebar
         activeView={view.type}
-        activeLabel={view.labelId}
-        labels={labels}
         counts={counts}
-        dashboards={dashboards}
         onNavigate={navigate}
-        onSelectLabel={(id) => navigate('label', id)}
         onNewTask={() => openNewTask(defaultDateForView)}
-        onManageLabels={() => setLabelManagerOpen(true)}
         isAdmin={isAdmin}
       />
 
@@ -480,7 +485,26 @@ function AppShell() {
           isAdmin={isAdmin}
         />
 
-        {!activeView.search && <TaskTabsBar activeView={activeView} activeLabel={view.labelId} labels={labels} counts={counts} onNavigate={navigate} />}
+        {!activeView.search && <TaskTabsBar activeView={activeView} counts={counts} onNavigate={navigate} />}
+
+        {!activeView.search && view.type !== 'dashboards' && view.type !== 'lilo' && view.type !== 'tracker' && view.type !== 'admin' && view.type !== 'reports' && view.type !== 'calendar' && view.type !== 'teamleave' && (
+          <CategoryBar
+            labels={labels}
+            counts={counts}
+            labelIds={view.labelIds || []}
+            onToggle={(id) => {
+              if (id === null) {
+                if ((view.labelIds || []).length > 0) navigate(view.type);
+                return;
+              }
+              const next = (view.labelIds || []).includes(id)
+                ? (view.labelIds || []).filter((x) => x !== id)
+                : [...(view.labelIds || []), id];
+              navigate(view.type, next);
+            }}
+            onManage={() => setLabelManagerOpen(true)}
+          />
+        )}
 
         {!activeView.search && view.type === 'today' && <StatsBar stats={stats} />}
         {!activeView.search && view.type === 'today' && (
@@ -488,7 +512,7 @@ function AppShell() {
         )}
 
         {!activeView.search && (view.type === 'today' || view.type === 'inbox') && (
-          <TeamLeaveCard entries={teamLeave} onOpen={() => navigate('teamleave')} />
+          <TeamLeaveCard entries={teamLeave} today={shiftToday} tomorrow={nextShiftDay} onOpen={() => navigate('teamleave')} />
         )}
 
         <div
@@ -526,7 +550,9 @@ function AppShell() {
               onUpdate={updateTeamLeave}
               onDelete={deleteTeamLeave}
               onToggleCover={toggleCoverTask}
+              onReplaceCoverTasks={replaceTeamLeaveCover}
               onToggleTask={toggleComplete}
+              onAddTaskFor={(member) => openNewTask(todayStr(), { member })}
             />
           ) : view.type === 'lilo' ? (
             <LiloView
@@ -623,7 +649,7 @@ function AppShell() {
         onNewTask={() => openNewTask(defaultDateForView)}
         onNewBoard={() => setDashboardModal({ open: true, initial: null })}
         onSearch={() => {
-          setView((v) => (v.type === 'dashboards' || v.type === 'lilo' || v.type === 'tracker' || v.type === 'admin' || v.type === 'reports' || v.type === 'calendar' || v.type === 'teamleave' ? { type: 'inbox', labelId: null } : v));
+          setView((v) => (v.type === 'dashboards' || v.type === 'lilo' || v.type === 'tracker' || v.type === 'admin' || v.type === 'reports' || v.type === 'calendar' || v.type === 'teamleave' ? { type: 'inbox', labelIds: [] } : v));
           setSearch('');
           requestAnimationFrame(() => searchRef.current?.focus());
         }}
@@ -633,16 +659,9 @@ function AppShell() {
       <MoreSheet
         open={moreOpen}
         activeView={view.type}
-        activeLabel={view.labelId}
-        labels={labels}
         counts={counts}
-        quickLinks={dashboards}
         onClose={() => setMoreOpen(false)}
         onNavigate={navigate}
-        onManageLabels={() => {
-          setMoreOpen(false);
-          setLabelManagerOpen(true);
-        }}
         isAdmin={isAdmin}
       />
 
@@ -654,6 +673,8 @@ function AppShell() {
         defaultDate={modal.defaultDate}
         defaultDashboardIds={modal.defaultDashboardIds}
         defaultType={modal.defaultType}
+        defaultMember={modal.defaultMember}
+        memberNames={memberNames}
         onClose={() => setModal((m) => ({ ...m, open: false }))}
         onSave={saveTask}
         onDelete={removeTask}

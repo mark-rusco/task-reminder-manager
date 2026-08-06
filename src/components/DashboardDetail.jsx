@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { ArrowLeft, ExternalLink, Pencil, Plus, Users, Calendar, StickyNote, Image as ImageIcon, CheckCheck } from 'lucide-react';
 import { DASHBOARD_STATUSES, dashboardStatusMeta } from '../utils/constants';
 import { formatDueDate } from '../utils/dates';
-import DashboardTypeIcon from './DashboardTypeIcon.jsx';
+import DashboardCategoryIcon from './DashboardCategoryIcon.jsx';
 import DashboardNotes from './DashboardNotes.jsx';
 
 export default function DashboardDetail({
@@ -40,7 +40,7 @@ export default function DashboardDetail({
         <div>
           <div className="dashboard-detail-title-row">
             <h2>{dashboard.name}</h2>
-            <DashboardTypeIcon type={dashboard.type} showLabel />
+            <DashboardCategoryIcon category={dashboard.category || 'dashboard'} size={11} showLabel />
             <span className="status-badge" style={{ background: `${sm.color}1f`, color: sm.color }}>
               <span className="chip-dot" style={{ background: sm.color }} />
               {sm.label}

@@ -45,15 +45,20 @@ export function dashboardStatusMeta(value) {
   return DASHBOARD_STATUSES.find((s) => s.value === value) || DASHBOARD_STATUSES[0];
 }
 
-export const DASHBOARD_TYPES = [
-  { value: 'powerbi', label: 'Power BI Dashboard', color: '#f2c811', icon: 'bar-chart' },
-  { value: 'excel', label: 'Excel', color: '#217346', icon: 'file-spreadsheet' },
-  { value: 'sharepoint', label: 'SharePoint Folder', color: '#0078d4', icon: 'folder' },
+/** Fallback category list, mirrored by the seeds in migration 0016. */
+export const DASHBOARD_CATEGORIES = [
+  { value: 'dashboard', label: 'Dashboards', color: '#6366f1', icon: 'layout' },
+  { value: 'report', label: 'Reports', color: '#8b5cf6', icon: 'bar-chart' },
+  { value: 'excel', label: 'Excel', color: '#16a34a', icon: 'file-spreadsheet' },
+  { value: 'office', label: 'Office tools', color: '#0ea5e9', icon: 'laptop' },
+  { value: 'github', label: 'GitHub', color: '#64748b', icon: 'code' },
+  { value: 'sharepoint', label: 'SharePoint', color: '#2563eb', icon: 'folder' },
+  { value: 'other', label: 'Other', color: '#94a3b8', icon: 'box' },
 ];
 
-/** Fallback lookup used when the DB-backed dashboard type list isn't loaded. */
-export function dashboardTypeMeta(value) {
-  return DASHBOARD_TYPES.find((t) => t.value === value) || DASHBOARD_TYPES[0];
+/** Fallback lookup used when the DB-backed dashboard category list isn't loaded. */
+export function dashboardCategoryMeta(value) {
+  return DASHBOARD_CATEGORIES.find((c) => c.value === value) || DASHBOARD_CATEGORIES[0];
 }
 
 export function uid() {

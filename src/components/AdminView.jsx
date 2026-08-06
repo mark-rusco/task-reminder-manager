@@ -4,14 +4,14 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { logAudit } from '../lib/audit';
 import { friendlyAuthError } from '../lib/authErrors';
-import DashboardTypesAdmin from './DashboardTypesAdmin.jsx';
+import DashboardCategoriesAdmin from './DashboardCategoriesAdmin.jsx';
 import SystemHealth from './SystemHealth.jsx';
 
 const TABS = [
   { id: 'users', label: 'Users', icon: Users },
   { id: 'roles', label: 'Roles & Permissions', icon: KeyRound },
   { id: 'fields', label: 'Profile Fields', icon: ListChecks },
-  { id: 'types', label: 'Dashboard Types', icon: LayoutDashboard },
+  { id: 'types', label: 'Dashboard Categories', icon: LayoutDashboard },
   { id: 'health', label: 'System Health', icon: HeartPulse },
   { id: 'settings', label: 'Settings', icon: Settings2 },
   { id: 'audit', label: 'Audit Trail', icon: History },
@@ -52,7 +52,7 @@ export default function AdminView({ onToast }) {
       {tab === 'users' && <UsersTab onToast={onToast} />}
       {tab === 'roles' && <RolesTab onToast={onToast} />}
       {tab === 'fields' && <FieldsTab onToast={onToast} />}
-      {tab === 'types' && <DashboardTypesAdmin onToast={onToast} />}
+      {tab === 'types' && <DashboardCategoriesAdmin onToast={onToast} />}
       {tab === 'health' && <SystemHealth onToast={onToast} />}
       {tab === 'settings' && <SettingsTab onToast={onToast} />}
       {tab === 'audit' && <AuditTab onToast={onToast} />}

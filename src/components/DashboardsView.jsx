@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react';
 import { Search, Plus, LayoutDashboard, ExternalLink, Pencil, Trash2, Link2, CalendarClock } from 'lucide-react';
-import { DASHBOARD_STATUSES, dashboardStatusMeta } from '../utils/constants';
+import { DASHBOARD_STATUSES, DASHBOARD_CATEGORIES, dashboardStatusMeta } from '../utils/constants';
 import { formatDueDate, isOverdue } from '../utils/dates';
-import { useDashboardTypes } from '../context/DashboardTypesContext';
-import DashboardTypeIcon from './DashboardTypeIcon.jsx';
+import { useDashboardCategories } from '../context/DashboardCategoriesContext';
+import DashboardCategoryIcon from './DashboardCategoryIcon.jsx';
+
+const effCategory = (d) => (d.category || 'dashboard');
 
 export default function DashboardsView({
   dashboards,
@@ -15,8 +17,9 @@ export default function DashboardsView({
   onOpen,
 }) {
   const [filter, setFilter] = useState('all');
+  const [catFilter, setCatFilter] = useState('all');
   const [search, setSearch] = useState('');
-  const { typeMeta } = useDashboardTypes();
+  const { categoryMeta } = useDashboardCategories();
 
   const linkedCount = useMemo(() => {
     const map = {};
@@ -35,6 +38,15 @@ export default function DashboardsView({
     return { total: dashboards.length, published, inProgress, avg };
   }, [dashboards]);
 
+  const catCounts = useMemo(() => {
+    const map = {};
+    for (const d of dashboards) {
+      const c = effCategory(d);
+      map[c] = (map[c] || 0) + 1;
+    }
+    return map;
+  }, [dashboards]);
+
   const list = useMemo(() => {
     const q = search.trim().toLowerCase();
     return dashboards
@@ -45,26 +57,125 @@ export default function DashboardsView({
           : d.name.toLowerCase().includes(q) ||
             (d.description || '').toLowerCase().includes(q) ||
             (d.workspace || '').toLowerCase().includes(q) ||
-            typeMeta(d.type).label.toLowerCase().includes(q),
+            categoryMeta(effCategory(d)).label.toLowerCase().includes(q),
       );
-  }, [dashboards, filter, search, typeMeta]);
+  }, [dashboards, filter, search, categoryMeta]);
+
+  const visibleCategories = catFilter === 'all' ? DASHBOARD_CATEGORIES : DASHBOARD_CATEGORIES.filter((c) => c.value === catFilter);
+  const sections = visibleCategories
+    .map((cat) => ({ cat, items: list.filter((d) => effCategory(d) === cat.value) }))
+    .filter((s) => s.items.length > 0);
+  const hasItems = dashboards.length > 0 && sections.length > 0;
+
+  const card = (d) => {
+    const sm = dashboardStatusMeta(d.status);
+    const overdue = d.dueDate && !['published', 'deprecated'].includes(d.status) && isOverdue({ dueDate: d.dueDate }, now);
+    const linked = linkedCount[d.id] || 0;
+    return (
+      <article key={d.id} className="dashboard-card" onClick={() => onOpen(d.id)} role="button" tabIndex={0}>
+        <div className="dashboard-card-head">
+          <div className="dashboard-card-title">
+            <div className="dashboard-card-name-row">
+              <DashboardCategoryIcon category={effCategory(d)} size={16} />
+              <h3>{d.name}</h3>
+            </div>
+            {d.workspace && <span className="dashboard-workspace">{d.workspace}</span>}
+          </div>
+          <span className="status-badge" style={{ background: `${sm.color}1f`, color: sm.color }}>
+            <span className="chip-dot" style={{ background: sm.color }} />
+            {sm.label}
+          </span>
+        </div>
+
+        <p className="dashboard-card-desc">{d.description || 'No description.'}</p>
+
+        <div className="dashboard-progress">
+          <div className="dashboard-progress-track">
+            <div className="dashboard-progress-fill" style={{ width: `${d.progress}%`, background: sm.color }} />
+          </div>
+          <span className="dashboard-progress-pct">{d.progress}%</span>
+        </div>
+
+        <div className="dashboard-card-meta">
+          <DashboardCategoryIcon category={effCategory(d)} size={11} showLabel />
+          {linked > 0 && (
+            <span className="chip chip-meeting">
+              <Link2 size={11} /> {linked} linked
+            </span>
+          )}
+          {d.dueDate && (
+            <span className={`chip ${overdue ? 'due-overdue' : ''}`}>
+              <CalendarClock size={11} /> {formatDueDate(d.dueDate)}
+            </span>
+          )}
+        </div>
+
+        <div className="dashboard-card-actions" onClick={(e) => e.stopPropagation()}>
+          {d.url && (
+            <a className="icon-btn" href={d.url} target="_blank" rel="noreferrer" title="Open in Power BI">
+              <ExternalLink size={15} />
+            </a>
+          )}
+          <button className="icon-btn" onClick={() => onEdit(d)} title="Edit dashboard">
+            <Pencil size={15} />
+          </button>
+          <button className="icon-btn danger" onClick={() => onDelete(d.id)} title="Delete dashboard">
+            <Trash2 size={15} />
+          </button>
+        </div>
+      </article>
+    );
+  };
 
   return (
     <div className="dashboards-page">
       <div className="dashboards-toolbar">
-        <div className="search-box">
-          <Search size={16} />
-          <input
-            type="search"
-            placeholder="Search dashboards…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            aria-label="Search dashboards"
-          />
+        <div className="toolbar-row">
+          <div className="search-box">
+            <Search size={16} />
+            <input
+              type="search"
+              placeholder="Search dashboards…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              aria-label="Search dashboards"
+            />
+          </div>
+          <button type="button" className="btn btn-primary" onClick={onNew}>
+            <Plus size={16} />
+            New Dashboard
+          </button>
         </div>
-        <div className="status-filters">
-          <button type="button" className={`chip chip-btn ${filter === 'all' ? 'on' : ''}`} onClick={() => setFilter('all')}>
+
+        <div className="category-filters" role="group" aria-label="Filter by category">
+          <button
+            type="button"
+            className={`chip chip-btn ${catFilter === 'all' ? 'on' : ''}`}
+            onClick={() => setCatFilter('all')}
+          >
             All ({dashboards.length})
+          </button>
+          {DASHBOARD_CATEGORIES.map((c) => {
+            const n = catCounts[c.value] || 0;
+            if (!n) return null;
+            return (
+              <button
+                key={c.value}
+                type="button"
+                className={`chip chip-btn ${catFilter === c.value ? 'on' : ''}`}
+                style={catFilter === c.value ? { borderColor: c.color, color: c.color, background: `${c.color}1f` } : undefined}
+                onClick={() => setCatFilter(catFilter === c.value ? 'all' : c.value)}
+              >
+                <DashboardCategoryIcon category={c.value} size={12} />
+                {c.label} ({n})
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="status-filters" role="group" aria-label="Filter by status">
+          <button type="button" className={`chip chip-btn ${filter === 'all' ? 'on' : ''}`} onClick={() => setFilter('all')}>
+            All statuses
           </button>
           {DASHBOARD_STATUSES.map((s) => {
             const n = dashboards.filter((d) => d.status === s.value).length;
@@ -82,10 +193,6 @@ export default function DashboardsView({
             );
           })}
         </div>
-        <button type="button" className="btn btn-primary" onClick={onNew}>
-          <Plus size={16} />
-          New Dashboard
-        </button>
       </div>
 
       <div className="stats-bar dash-stats">
@@ -119,7 +226,7 @@ export default function DashboardsView({
         </div>
       </div>
 
-      {list.length === 0 ? (
+      {!hasItems ? (
         <div className="empty-state">
           <div className="empty-icon">
             <LayoutDashboard size={30} />
@@ -133,65 +240,17 @@ export default function DashboardsView({
           )}
         </div>
       ) : (
-        <div className="dashboard-grid">
-          {list.map((d) => {
-            const sm = dashboardStatusMeta(d.status);
-            const overdue = d.dueDate && !['published', 'deprecated'].includes(d.status) && isOverdue({ dueDate: d.dueDate }, now);
-            const linked = linkedCount[d.id] || 0;
-            return (
-              <article key={d.id} className="dashboard-card" onClick={() => onOpen(d.id)} role="button" tabIndex={0}>
-                <div className="dashboard-card-head">
-                  <div className="dashboard-card-title">
-                    <div className="dashboard-card-name-row">
-                      <DashboardTypeIcon type={d.type} size={16} />
-                      <h3>{d.name}</h3>
-                    </div>
-                    {d.workspace && <span className="dashboard-workspace">{d.workspace}</span>}
-                  </div>
-                  <span className="status-badge" style={{ background: `${sm.color}1f`, color: sm.color }}>
-                    <span className="chip-dot" style={{ background: sm.color }} />
-                    {sm.label}
-                  </span>
-                </div>
-
-                <p className="dashboard-card-desc">{d.description || 'No description.'}</p>
-
-                <div className="dashboard-progress">
-                  <div className="dashboard-progress-track">
-                    <div className="dashboard-progress-fill" style={{ width: `${d.progress}%`, background: sm.color }} />
-                  </div>
-                  <span className="dashboard-progress-pct">{d.progress}%</span>
-                </div>
-
-                <div className="dashboard-card-meta">
-                  {linked > 0 && (
-                    <span className="chip chip-meeting">
-                      <Link2 size={11} /> {linked} linked
-                    </span>
-                  )}
-                  {d.dueDate && (
-                    <span className={`chip ${overdue ? 'due-overdue' : ''}`}>
-                      <CalendarClock size={11} /> {formatDueDate(d.dueDate)}
-                    </span>
-                  )}
-                </div>
-
-                <div className="dashboard-card-actions" onClick={(e) => e.stopPropagation()}>
-                  {d.url && (
-                    <a className="icon-btn" href={d.url} target="_blank" rel="noreferrer" title="Open in Power BI">
-                      <ExternalLink size={15} />
-                    </a>
-                  )}
-                  <button className="icon-btn" onClick={() => onEdit(d)} title="Edit dashboard">
-                    <Pencil size={15} />
-                  </button>
-                  <button className="icon-btn danger" onClick={() => onDelete(d.id)} title="Delete dashboard">
-                    <Trash2 size={15} />
-                  </button>
-                </div>
-              </article>
-            );
-          })}
+        <div className="dashboard-sections">
+          {sections.map(({ cat, items }) => (
+            <section key={cat.value} className="dashboard-section">
+              <div className="dash-section-head">
+                <DashboardCategoryIcon category={cat.value} size={16} />
+                <h3>{cat.label}</h3>
+                <span className="dash-section-count">{items.length}</span>
+              </div>
+              <div className="dashboard-grid">{items.map(card)}</div>
+            </section>
+          ))}
         </div>
       )}
     </div>

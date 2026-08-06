@@ -1,5 +1,5 @@
 import { BarChart3, PieChart, TrendingUp, CheckCircle2, AlertTriangle, Download } from 'lucide-react';
-import { dashboardStatusMeta } from '../utils/constants';
+import { dashboardStatusMeta, dashboardCategoryMeta } from '../utils/constants';
 import { downloadCSV, downloadJSON, todayStamp } from '../utils/export';
 
 function daysAgo(days) {
@@ -92,8 +92,8 @@ export default function ReportsView({ tasks, labels, dashboards, liloEntries, tr
       ]));
 
   const exportDashboards = () =>
-    downloadCSV(`focusly-dashboards-${todayStamp()}.csv`, ['Name', 'Type', 'Status', 'Progress %', 'Notes'],
-      dashboards.map((d) => [d.name, d.type || '', dashboardStatusMeta(d.status || 'planning').label, d.progress ?? '', d.notes || '']));
+    downloadCSV(`focusly-dashboards-${todayStamp()}.csv`, ['Name', 'Category', 'Status', 'Progress %', 'Notes'],
+      dashboards.map((d) => [d.name, dashboardCategoryMeta(d.category || 'dashboard').label, dashboardStatusMeta(d.status || 'planning').label, d.progress ?? '', d.notes || '']));
 
   const exportLilo = () =>
     downloadCSV(`focusly-lilo-${todayStamp()}.csv`, ['Date', 'Status', 'Location', 'Start', 'End'],

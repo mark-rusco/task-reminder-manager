@@ -1,4 +1,4 @@
-import { ClipboardList, CalendarRange, CalendarDays, BarChart3, Users, Plus, X, ShieldCheck } from 'lucide-react';
+import { ClipboardList, CalendarRange, CalendarDays, BarChart3, Users, X, ShieldCheck } from 'lucide-react';
 
 const SECONDARY = [
   { id: 'calendar', label: 'Calendar', icon: CalendarDays },
@@ -16,13 +16,9 @@ const SECONDARY = [
 export default function MoreSheet({
   open,
   activeView,
-  activeLabel,
   onClose,
   onNavigate,
-  onManageLabels,
-  labels,
   counts,
-  quickLinks,
   isAdmin,
 }) {
   if (!open) return null;
@@ -32,7 +28,6 @@ export default function MoreSheet({
     onClose();
   };
 
-  const quick = (quickLinks || []).filter((d) => d.url && d.url.trim()).sort((a, b) => a.name.localeCompare(b.name));
   const views = isAdmin ? [...SECONDARY, { id: 'admin', label: 'Admin', icon: ShieldCheck }] : SECONDARY;
 
   return (
@@ -51,7 +46,7 @@ export default function MoreSheet({
             <span className="sheet-group-label">Views</span>
             {views.map((item) => {
               const Icon = item.icon;
-              const active = activeView === item.id && !activeLabel;
+              const active = activeView === item.id;
               return (
                 <button
                   key={item.id}
@@ -66,42 +61,6 @@ export default function MoreSheet({
               );
             })}
           </div>
-
-          <div className="sheet-group">
-            <div className="sheet-group-head">
-              <span className="sheet-group-label">Categories</span>
-              <button type="button" className="icon-btn sm" onClick={onManageLabels} title="Manage categories">
-                <Plus size={16} />
-              </button>
-            </div>
-            {labels.length === 0 ? (
-              <p className="sheet-empty">No categories yet — tap + to add one.</p>
-            ) : (
-              labels.map((l) => {
-                const active = activeLabel === l.id;
-                return (
-                  <button key={l.id} type="button" className={`sheet-row ${active ? 'active' : ''}`} onClick={() => go('label', l.id)}>
-                    <span className="label-dot" style={{ background: l.color }} />
-                    <span>{l.name}</span>
-                    <span className="sheet-count">{counts['label-' + l.id] || 0}</span>
-                  </button>
-                );
-              })
-            )}
-          </div>
-
-          {quickLinks.length > 0 && (
-            <div className="sheet-group">
-              <span className="sheet-group-label">Quick links</span>
-              {quickLinks.map((d) => (
-                <a key={d.id} className="sheet-row" href={d.url} target="_blank" rel="noreferrer">
-                  <span className="label-dot" style={{ background: '#6366f1' }} />
-                  <span className="sheet-link-label">{d.name}</span>
-                  <span className="sheet-arrow">↗</span>
-                </a>
-              ))}
-            </div>
-          )}
         </div>
       </div>
     </div>

@@ -10,8 +10,6 @@ import {
   BarChart3,
   Users,
   Plus,
-  MoreHorizontal,
-  ExternalLink,
   ShieldCheck,
 } from 'lucide-react';
 
@@ -31,16 +29,10 @@ const NAV = [
 export default function Sidebar({
   activeView,
   onNavigate,
-  labels,
-  activeLabel,
-  onSelectLabel,
   onNewTask,
-  onManageLabels,
   counts,
-  dashboards,
   isAdmin,
 }) {
-  const quickLinks = (dashboards || []).filter((d) => d.url && d.url.trim()).sort((a, b) => a.name.localeCompare(b.name));
   const navItems = isAdmin ? [...NAV, { id: 'admin', label: 'Admin', icon: ShieldCheck }] : NAV;
   return (
     <aside className="sidebar">
@@ -60,7 +52,7 @@ export default function Sidebar({
       <nav className="sidebar-nav">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const active = activeView === item.id && !activeLabel;
+          const active = activeView === item.id;
           return (
             <button
               key={item.id}
@@ -74,55 +66,6 @@ export default function Sidebar({
             </button>
           );
         })}
-      </nav>
-
-      <div className="sidebar-section-head">
-        <span>Quick links</span>
-      </div>
-      <nav className="sidebar-nav quick-nav">
-        {quickLinks.length === 0 ? (
-          <p className="sidebar-empty">Pin a dashboard from Dashboards to jump straight to it.</p>
-        ) : (
-          quickLinks.map((d) => (
-            <a
-              key={d.id}
-              className="nav-item"
-              href={d.url}
-              target="_blank"
-              rel="noreferrer"
-              title={`Open ${d.name}`}
-            >
-              <ExternalLink size={16} strokeWidth={1.8} />
-              <span className="nav-label">{d.name}</span>
-            </a>
-          ))
-        )}
-      </nav>
-
-      <div className="sidebar-section-head">
-        <span>Categories</span>
-        <button type="button" className="icon-btn sm" onClick={onManageLabels} title="Manage categories">
-          <MoreHorizontal size={15} />
-        </button>
-      </div>
-
-      <nav className="sidebar-nav labels">
-        {labels.map((l) => {
-          const active = activeLabel === l.id;
-          return (
-            <button
-              key={l.id}
-              type="button"
-              className={`nav-item ${active ? 'active' : ''}`}
-              onClick={() => onSelectLabel(l.id)}
-            >
-              <span className="label-dot" style={{ background: l.color }} />
-              <span className="nav-label">{l.name}</span>
-              <span className="nav-count">{counts['label-' + l.id] || 0}</span>
-            </button>
-          );
-        })}
-        {labels.length === 0 && <p className="sidebar-empty">No categories yet.</p>}
       </nav>
 
       <div className="sidebar-footer">
