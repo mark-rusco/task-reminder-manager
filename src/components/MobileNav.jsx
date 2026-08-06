@@ -9,7 +9,7 @@ const PRIMARY = [
 ];
 
 /** Views that live inside the "Tasks" hub (tab bar). */
-const TASK_VIEWS = new Set(['inbox', 'today', 'upcoming', 'completed', 'label', 'search']);
+const TASK_VIEWS = new Set(['inbox', 'today', 'upcoming', 'completed', 'search']);
 
 /** Secondary views reachable through the "More" sheet. */
 const MORE_VIEWS = new Set(['calendar', 'lilo', 'tracker', 'teamleave', 'reports', 'admin']);

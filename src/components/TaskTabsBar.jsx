@@ -7,15 +7,15 @@ const TABS = [
   { id: 'completed', label: 'Completed', icon: CheckCheck },
 ];
 
-/** Task tabs are unreachable defaults; "all" also covers labels & search. */
-const ALL_ACTIVE = new Set(['inbox', 'label', 'search']);
+/** Task tabs are unreachable defaults; "all" also covers search. */
+const ALL_ACTIVE = new Set(['inbox', 'search']);
 
 /**
  * Mobile task-scope switcher. Shown only on small screens in place of
  * separate nav entries for the task list, matching the grouping used by
  * Todoist / Google Tasks. Desktop keeps the full sidebar for these views.
  */
-export default function TaskTabsBar({ activeView, activeLabel, labels, counts, onNavigate }) {
+export default function TaskTabsBar({ activeView, counts, onNavigate }) {
   if (activeView.type === 'dashboards' || activeView.type === 'lilo' || activeView.type === 'tracker' || activeView.type === 'teamleave' || activeView.type === 'reports' || activeView.type === 'calendar' || activeView.type === 'admin') {
     return null;
   }
@@ -42,28 +42,6 @@ export default function TaskTabsBar({ activeView, activeLabel, labels, counts, o
           );
         })}
       </div>
-
-      {(labels || []).length > 0 && (
-        <div className="task-tab-labels" role="list" aria-label="Categories">
-          {labels.map((l) => {
-            const active = activeLabel === l.id;
-            const count = counts['label-' + l.id] || 0;
-            return (
-              <button
-                key={l.id}
-                type="button"
-                role="listitem"
-                className={`task-tab-label ${active ? 'active' : ''}`}
-                onClick={() => onNavigate('label', l.id)}
-              >
-                <span className="label-dot" style={{ background: l.color }} />
-                <span>{l.name}</span>
-                {count > 0 && <span className="task-tab-count">{count}</span>}
-              </button>
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 }

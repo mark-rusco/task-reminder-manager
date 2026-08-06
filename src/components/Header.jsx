@@ -81,8 +81,7 @@ export default function Header({
   );
 }
 
-export function viewMeta(view, labels, now) {
-  const label = labels.find((l) => l.id === view.labelId);
+export function viewMeta(view, now) {
   const date = now.format('dddd, MMMM D');
   switch (view.type) {
     case 'inbox':
@@ -93,8 +92,6 @@ export function viewMeta(view, labels, now) {
       return { title: 'Upcoming', subtitle: 'What is coming next' };
     case 'completed':
       return { title: 'Completed', subtitle: 'Everything you finished' };
-    case 'label':
-      return { title: label ? label.name : 'Category', subtitle: 'Tasks in this category' };
     default:
       return { title: 'Tasks', subtitle: '' };
   }

@@ -2,11 +2,44 @@ import dayjs from 'dayjs';
 import { BUCKET_ORDER, BUCKET_LABELS, timeBucket } from '../utils/dates';
 
 export function filterTasks(tasks, view, now = dayjs()) {
-  const labelId = view.labelId;
   const search = (view.search || '').trim().toLowerCase();
+  const labelIds = Array.isArray(view.labelIds) ? view.labelIds : view.labelId ? [view.labelId] : [];
 
   let list = Array.isArray(tasks) ? tasks : [];
-  if (labelId) list = list.filter((t) => (t.labels || []).includes(labelId));
+
+  switch (view.type) {
+    case 'inbox':
+      list = list.filter((t) => !t.completed);
+      break;
+    case 'today':
+      list = list.filter((t) => {
+        if (t.completed) return false;
+        const b = timeBucket(t, now);
+        return b === 'overdue' || b === 'today';
+      });
+      break;
+    case 'upcoming':
+      list = list.filter((t) => {
+        if (t.completed) return false;
+        const b = timeBucket(t, now);
+        return b === 'tomorrow' || b === 'week' || b === 'later';
+      });
+      break;
+    case 'someday':
+      list = list.filter((t) => !t.completed && !t.dueDate);
+      break;
+    case 'completed':
+      list = list.filter((t) => t.completed);
+      break;
+    default:
+      list = list.filter((t) => !t.completed);
+  }
+
+  // Category toggles: keep tasks that belong to ANY enabled category.
+  if (labelIds.length > 0) {
+    list = list.filter((t) => (t.labels || []).some((id) => labelIds.includes(id)));
+  }
+
   if (search) {
     list = list.filter(
       (t) =>
@@ -16,28 +49,7 @@ export function filterTasks(tasks, view, now = dayjs()) {
     );
   }
 
-  switch (view.type) {
-    case 'inbox':
-      return list.filter((t) => !t.completed);
-    case 'today':
-      return list.filter((t) => {
-        if (t.completed) return false;
-        const b = timeBucket(t, now);
-        return b === 'overdue' || b === 'today';
-      });
-    case 'upcoming':
-      return list.filter((t) => {
-        if (t.completed) return false;
-        const b = timeBucket(t, now);
-        return b === 'tomorrow' || b === 'week' || b === 'later';
-      });
-    case 'someday':
-      return list.filter((t) => !t.completed && !t.dueDate);
-    case 'completed':
-      return list.filter((t) => t.completed);
-    default:
-      return list.filter((t) => !t.completed);
-  }
+  return list;
 }
 
 export function groupByBucket(tasks, now = dayjs()) {
