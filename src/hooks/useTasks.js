@@ -120,6 +120,7 @@ const toRow = (t, userId) => ({
   screenshot: t.screenshot || null,
   dashboard_id: t.dashboardId || null,
   dashboard_ids: t.dashboardIds || [],
+  assigned_member: t.assignedMember || null,
 });
 
 const fromRow = (r) => ({
@@ -140,6 +141,7 @@ const fromRow = (r) => ({
   meetingNotes: r.meeting_notes || '',
   screenshot: r.screenshot || null,
   dashboardIds: Array.isArray(r.dashboard_ids) ? r.dashboard_ids : r.dashboard_id ? [r.dashboard_id] : [],
+  assignedMember: r.assigned_member || null,
 });
 
 export function useTasks() {
@@ -323,6 +325,7 @@ export function useTasks() {
         screenshot: null,
         dashboardIds: [],
         pinned: false,
+        assignedMember: null,
         ...data,
       };
       setTasks((prev) => [task, ...prev]);

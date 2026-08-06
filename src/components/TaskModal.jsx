@@ -24,6 +24,7 @@ const EMPTY_FORM = {
   screenshot: null,
   dashboardIds: [],
   pinned: false,
+  assignedMember: '',
 };
 
 const TYPE_ICON = {
@@ -40,6 +41,8 @@ export default function TaskModal({
   defaultDate,
   defaultDashboardIds = EMPTY_IDS,
   defaultType = 'task',
+  defaultMember,
+  memberNames,
   onClose,
   onSave,
   onDelete,
@@ -79,13 +82,14 @@ export default function TaskModal({
           screenshot: initial.screenshot || null,
           dashboardIds: initial.dashboardIds || [],
           pinned: !!initial.pinned,
+          assignedMember: initial.assignedMember || '',
         });
       } else {
-        setForm({ ...EMPTY_FORM, dueDate: defaultDate || todayStr(), taskType: defaultType, dashboardIds: defaultDashboardIds });
+        setForm({ ...EMPTY_FORM, dueDate: defaultDate || todayStr(), taskType: defaultType, dashboardIds: defaultDashboardIds, assignedMember: defaultMember || '' });
       }
       window.setTimeout(() => titleRef.current?.focus(), 60);
     }
-  }, [open, initial, defaultDate, defaultDashboardIds, defaultType]);
+  }, [open, initial, defaultDate, defaultDashboardIds, defaultType, defaultMember]);
 
   if (!open) return null;
 
@@ -119,6 +123,7 @@ export default function TaskModal({
       screenshot: form.screenshot,
       dashboardIds: form.dashboardIds || [],
       pinned: form.pinned,
+      assignedMember: form.assignedMember.trim() || null,
     });
   };
 
@@ -346,6 +351,44 @@ export default function TaskModal({
                 <Pin size={13} />
                 {form.pinned ? 'Pinned — first on your next shift' : 'Pin this task'}
               </button>
+            </div>
+
+            <div className="form-section">
+              <label className="form-label" htmlFor="task-member">
+                <Users size={13} /> Team member
+              </label>
+              <input
+                id="task-member"
+                type="text"
+                className="input"
+                list="task-members-datalist"
+                placeholder="Unassigned — type a name or pick one"
+                value={form.assignedMember || ''}
+                onChange={(e) => set({ assignedMember: e.target.value })}
+              />
+              <datalist id="task-members-datalist">
+                {(memberNames || []).map((n) => (
+                  <option key={n} value={n} />
+                ))}
+              </datalist>
+              {(memberNames || []).length > 0 && (
+                <div className="status-row tl-name-chips">
+                  <Users size={13} />
+                  {(memberNames || []).map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      className={`chip chip-btn ${form.assignedMember === n ? 'on' : ''}`}
+                      onClick={() => set({ assignedMember: form.assignedMember === n ? '' : n })}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <p className="form-hint">
+                Assigning a team member auto-lists this task for coverage when they&apos;re on leave.
+              </p>
             </div>
 
             <div className="form-section">
